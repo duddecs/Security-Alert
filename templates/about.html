@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Sobre - Security Alert{% endblock %}
+{% block content %}
+<div class="about-page">
+    <h1 class="hero-title" style="font-size: 2.8rem;">Sobre a Security Alert</h1>
+
+    <section class="about-section">
+        <h2 class="section-title"> Por que a Security Alert?</h2>
+        <div class="about-text">
+            <p>A <strong>Security Alert</strong> nasceu da constatacao de que ataques ciberneticos bem-sucedidos dependem, em sua maioria, de um fator humano.</p>
+            <p>Estudos do setor demonstram que mais de 80% dos incidentes de seguranca comecam com um clique em um link malicioso, uma senha reutilizada ou uma informacao compartilhada por descuido. Tecnologia protege sistemas - pessoas sao o elo mais importante da defesa.</p>
+            <p>Esta plataforma oferece capacitacao pratica em tres frentes criticas:</p>
+            <ul class="about-list">
+                <li><strong>Senhas seguras</strong> - composicao, gestao e nao compartilhamento</li>
+                <li><strong>Negligencia operacional</strong> - bloqueios de tela, dispositivos perdidos, informacoes sigilosas</li>
+                <li><strong>Phishing</strong> - identificacao de tentativas por e-mail, SMS, telefone e web</li>
+            </ul>
+            <p>O objetivo e transformar conhecimento em habito, atraves de simulacoes curtas e contextualizadas no cenario corporativo da Leroy Merlin.</p>
+        </div>
+    </section>
+
+    <section class="about-section" id="quem-somos">
+        <h2 class="section-title">  Quem somos? </h2>
+        <div class="about-text">
+            <p>O grupo <strong>Security Alert</strong> foi formado por alunos do curso de Defesa Cibernetica da FIAP, como parte do Challenge Leroy Merlin 2026.</p>
+            <div class="team-grid">
+                <div class="team-card">
+                    <strong>Ana Luiza Azevedo Morais</strong>
+                    <span>RM: 565711</span>
+                </div>
+                <div class="team-card">
+                    <strong>Maria Eduarda de Lucena Alves</strong>
+                    <span>RM: 565184</span>
+                </div>
+                <div class="team-card">
+                    <strong>Pedro Henrique Copertino</strong>
+                    <span>RM: 564771</span>
+                </div>
+                <div class="team-card">
+                    <strong>Thalia Aiko Yamamoto</strong>
+                    <span>RM: 561758</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="about-cta">
+        <a href="{{ url_for('index') }}" class="btn btn-primary">← Voltar para a pagina inicial</a>
+    </div>
+</div>
+{% endblock %}

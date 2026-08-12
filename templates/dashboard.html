@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Security Alert{% endblock %}
+{% block content %}
+<div class="dashboard">
+    <div class="dash-header">
+        <h1>👋 Bem-vindo(a), {{ session.username }}!</h1>
+        <p>Pronto(a) para proteger a Leroy Merlin contra ataques ciberneticos?</p>
+        <a href="{{ url_for('game_start') }}" class="btn btn-success btn-lg pulse"> Iniciar Novo Treinamento? </a>
+    </div>
+
+    <div class="dash-stats">
+        <div class="stat-card stat-games">
+            <span class="stat-icon">🎮</span>
+            <div class="stat-info">
+                <span class="stat-value">{{ total_games }}</span>
+                <span class="stat-label">Treinamentos Realizados</span>
+            </div>
+        </div>
+        <div class="stat-card stat-completed">
+            <span class="stat-icon">✅</span>
+            <div class="stat-info">
+                <span class="stat-value">{{ completed_count }}</span>
+                <span class="stat-label">Treinamentos Concluidos</span>
+            </div>
+        </div>
+        <div class="stat-card stat-score">
+            <span class="stat-icon">🏆</span>
+            <div class="stat-info">
+                <span class="stat-value">{{ best_score }}/{{ best_max }}</span>
+                <span class="stat-label">Melhor Pontuacao</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="dash-grid">
+        <div class="dash-card">
+            <h2>🏅 Ranking Nacional</h2>
+            {% if ranking %}
+            <div class="ranking-list">
+                {% for player in ranking %}
+                <div class="ranking-item {% if player.username == session.username %}ranking-me{% endif %}">
+                    <span class="rank-pos">#{{ loop.index }}</span>
+                    <span class="rank-name">{{ player.username }}</span>
+                    <span class="rank-score">{{ player.best_score }}/{{ player.max_score }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted">Ninguem completou o treinamento ainda. Seja o primeiro!</p>
+            {% endif %}
+            <form method="POST" action="{{ url_for('toggle_ranking') }}" class="ranking-toggle-form">
+                <label class="checkbox-label">
+                    <input type="checkbox" {% if show_in_ranking %}checked{% endif %} disabled>
+                    <span>Aparecer no ranking público?</span>
+                </label>
+                <button type="submit" class="btn btn-sm">
+                    {% if show_in_ranking %}Desativar{% else %}Ativar{% endif %}
+                </button>
+            </form>
+        </div>
+
+        <div class="dash-card">
+            <h2>📜 Histórico de Treinamentos</h2>
+            {% if sessions %}
+            <div class="history-list">
+                {% for s in sessions[:10] %}
+                <div class="history-item">
+                    <div class="history-info">
+                        <span class="history-date">{{ s.started_at[:10] }}</span>
+                        <span class="history-status">
+                            {% if s.completed %}
+                                ✅ {{ s.score }}/{{ s.max_score }} pontos
+                            {% else %}
+                                ⏳ Em andamento
+                            {% endif %}
+                        </span>
+                    </div>
+                    {% if s.completed %}
+                    <a href="{{ url_for('game_feedback', game_id=s.id) }}" class="btn btn-sm">Ver Resultado</a>
+                    {% else %}
+                    <a href="{{ url_for('game_play', game_id=s.id, phase=s.current_phase, sub=s.current_subphase) }}" class="btn btn-sm btn-success">Continuar</a>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted">Voce ainda nao fez nenhum treinamento. Comece agora!</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

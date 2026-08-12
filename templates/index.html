@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Security Alert - Bem-vindo{% endblock %}
+{% block content %}
+<div class="landing">
+    <div class="landing-hero">
+        <div class="hero-badge">🔐 Challenge Leroy Merlin 2026</div>
+        <h1 class="hero-title">
+            <img src="{{ url_for('static', filename='img/Logo 2.jpeg (1).png') }}" alt="Security Alert" class="hero-logo">
+            Security Alert
+        </h1>
+        <p class="hero-subtitle">
+            Plataforma corporativa de capacitacao em ciberseguranca.<br>
+            Treinamento continuo para colaboradores contra ameacas digitais reais do cotidiano empresarial.
+        </p>
+        <div class="hero-cta">
+            <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">🔑 Entrar</a>
+            <a href="{{ url_for('register') }}" class="btn btn-outline btn-lg">✨ Criar Conta</a>
+        </div>
+    </div>
+
+    <div class="features">
+        <div class="feature-card">
+            <span class="feature-icon">🎮</span>
+            <h3>3 Modulos de Treinamento</h3>
+            <p>Senhas, negligencia operacional e phishing - os vetores de ataque mais explorados contra empresas.</p>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">🛡️</span>
+            <h3>Avaliacao por Pontuacao</h3>
+            <p>Cada fase concluida corretamente gera pontos. A pontuacao final mede sua preparacao para identificar ameacas.</p>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">📈</span>
+            <h3>Ranking Corporativo</h3>
+            <p>Compare seu desempenho com outros colaboradores (mediante consentimento).</p>
+        </div>
+    </div>
+
+    {# Ranking Nacional - so aparece se tiver alguem cadastrado com show_in_ranking=1 #}
+    {% if ranking %}
+    <div class="national-ranking">
+        <h2 class="section-title">🏆 Ranking Nacional</h2>
+        <p class="section-subtitle">Apenas colaboradores que optaram por aparecer publicamente.</p>
+        <div class="ranking-table">
+            {% for player in ranking %}
+            <div class="rank-row {% if loop.index <= 3 %}rank-top{% endif %}">
+                <span class="rank-medal">
+                    {% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}º{% endif %}
+                </span>
+                <span class="rank-name">{{ player.username }}</span>
+                <span class="rank-score">{{ player.best_score }}/{{ player.max_score }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="landing-links">
+        <a href="{{ url_for('about') }}" class="landing-link-card">
+            <span class="ll-icon">❓</span>
+            <span class="ll-title">Por que a Security Alert?</span>
+            <span class="ll-desc">Entenda a importancia do treinamento.</span>
+        </a>
+        <a href="{{ url_for('about') }}#quem-somos" class="landing-link-card">
+            <span class="ll-icon">👥</span>
+            <span class="ll-title">Quem somos</span>
+            <span class="ll-desc">Conheca o grupo Security Alert.</span>
+        </a>
+    </div>
+</div>
+{% endblock %}

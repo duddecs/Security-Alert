@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Login - Security Alert{% endblock %}
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <span class="auth-icon">🛡️</span>
+            <h2>Entrar na Plataforma</h2>
+            <p>Bem-vindo(a) de volta! Faca login para continuar seu treinamento.</p>
+        </div>
+        <form method="POST" class="auth-form">
+            <div class="form-group">
+                <label for="login">Usuario ou Email</label>
+                <input type="text" id="login" name="login" placeholder="seu.usuario ou email@exemplo.com" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Senha</label>
+                <input type="password" id="password" name="password" placeholder="Sua senha" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+        </form>
+        <div class="auth-footer">
+            <p>Nao tem conta? <a href="{{ url_for('register') }}">Criar conta</a></p>
+            <p><a href="{{ url_for('reset_password') }}">Esqueceu sua senha?</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Criar Conta - Security Alert{% endblock %}
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <span class="auth-icon">✨</span>
+            <h2>Criar Nova Conta</h2>
+            <p>Junte-se ao treinamento de ciberseguranca da Leroy Merlin!</p>
+        </div>
+        <form method="POST" class="auth-form">
+            <div class="form-group">
+                <label for="username">Nome de Usuario</label>
+                <input type="text" id="username" name="username" placeholder="Como quer ser chamado(a)" required minlength="3">
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" placeholder="seu.email@exemplo.com" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Senha</label>
+                <input type="password" id="password" name="password" placeholder="Minimo 6 caracteres" required minlength="6">
+            </div>
+            <div class="form-group">
+                <label for="confirm">Confirmar Senha</label>
+                <input type="password" id="confirm" name="confirm" placeholder="Repita a senha" required minlength="6">
+            </div>
+            <div class="form-group form-check">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="show_in_ranking" value="1" checked>
+                    <span>Aparecer em Ranking Nacional?</span>
+                </label>
+                <small class="form-hint">Se ativado, seu nome de usuario aparecera no ranking publico da pagina inicial.</small>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Criar Conta</button>
+        </form>
+        <div class="auth-footer">
+            <p>Ja tem conta? <a href="{{ url_for('login') }}">Fazer login</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

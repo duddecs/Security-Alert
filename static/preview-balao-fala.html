@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Preview Balão de Fala - Stardew Style</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+/* === RESET === */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+/* === THEME === */
+:root {
+    --bg-dark: #1a3009;
+    --gold: #ffd700;
+    --bubble-bg: #fff;
+    --bubble-border: #2c1810;
+    --shadow: 0 8px 24px rgba(0,0,0,.5);
+    --font-pixel: 'Press Start 2P', monospace;
+    --font-mono: 'VT323', monospace;
+}
+
+body {
+    font-family: var(--font-mono);
+    background: linear-gradient(180deg, #2d5016, var(--bg-dark));
+    min-height: 100vh;
+    padding: 20px;
+    color: #fff;
+}
+
+/* Efeito de scanlines CRT sutil */
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg, transparent, transparent 4px,
+        rgba(0,0,0,.03) 4px, rgba(0,0,0,.03) 8px
+    );
+    pointer-events: none;
+    z-index: 999;
+}
+
+.container { max-width: 900px; margin: 0 auto; position: relative; z-index: 1; }
+
+/* === HEADER === */
+h1 {
+    font-family: var(--font-pixel);
+    font-size: 1.1rem;
+    text-align: center;
+    margin-bottom: 6px;
+    color: var(--gold);
+    text-shadow: 2px 2px 0 #000;
+}
+.subtitle {
+    text-align: center;
+    font-size: 1.1rem;
+    color: #aaa;
+    margin-bottom: 24px;
+}
+
+/* === CHARACTER SELECTOR === */
+.char-selector {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.char-btn {
+    padding: 8px;
+    background: transparent;
+    border: 3px solid #444;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all .2s;
+}
+.char-btn:hover { border-color: #fff; }
+.char-btn.active {
+    border-color: var(--gold);
+    box-shadow: 0 0 12px rgba(255,215,0,.5);
+}
+
+/* === SCENE === */
+.scene {
+    position: relative;
+    background: linear-gradient(180deg, #87ceeb 60%, #6b8e23 60%, #4a6b1a);
+    border: 4px solid var(--bubble-border);
+    border-radius: 8px;
+    height: 480px;
+    margin-bottom: 20px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+}
+
+/* Pixel clouds */
+.cloud {
+    position: absolute;
+    background: white;
+    top: 50px;
+}
+.cloud-1 { left: 60px; width: 60px; height: 18px;
+    box-shadow: -8px 8px 0 -2px white, 18px 4px 0 -2px white, 35px 0 0 white, 48px 6px 0 -2px white; }
+.cloud-2 { right: 100px; top: 90px; width: 50px; height: 16px;
+    box-shadow: -6px 6px 0 -2px white, 12px 3px 0 -2px white, 28px 0 0 white; }
+
+/* === CHARACTER === */
+.character {
+    position: absolute;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+}
+
+/* === SPEECH BUBBLE (Stardew style) === */
+.bubble {
+    position: absolute;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bubble-bg);
+    color: var(--bubble-border);
+    padding: 14px 18px;
+    border: 3px solid var(--bubble-border);
+    border-radius: 4px;
+    font-size: 1.4rem;
+    line-height: 1.4;
+    max-width: 600px;
+    min-width: 260px;
+    z-index: 10;
+    box-shadow: 4px 4px 0 rgba(0,0,0,.3);
+    animation: pop .3s ease-out;
+}
+@keyframes pop {
+    0%   { transform: translateX(-50%) scale(.5); opacity: 0; }
+    60%  { transform: translateX(-50%) scale(1.05); }
+    100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+
+/* Seta do balão */
+.bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -16px; left: 50%;
+    transform: translateX(-50%);
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-top: 16px solid var(--bubble-border);
+}
+.bubble::before {
+    content: '';
+    position: absolute;
+    bottom: -11px; left: 50%;
+    transform: translateX(-50%);
+    border-left: 11px solid transparent;
+    border-right: 11px solid transparent;
+    border-top: 12px solid var(--bubble-bg);
+    z-index: 1;
+}
+
+.speaker {
+    font-family: var(--font-pixel);
+    font-size: .65rem;
+    display: block;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+}
+
+.cursor {
+    display: inline-block;
+    width: 8px;
+    height: 1em;
+    background: var(--bubble-border);
+    animation: blink .6s steps(2) infinite;
+    vertical-align: text-bottom;
+    margin-left: 2px;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+.skip-hint {
+    position: absolute;
+    bottom: -28px;
+    right: 8px;
+    font-size: .85rem;
+    color: #666;
+    animation: pulse 2s infinite;
+}
+@keyframes pulse { 50% { opacity: .5; } }
+
+/* === CONTROLS === */
+.controls {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 20px;
+    background: rgba(0,0,0,.4);
+    padding: 14px;
+    border-radius: 8px;
+    border: 2px solid #444;
+}
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.control-group label {
+    font-family: var(--font-pixel);
+    font-size: .55rem;
+    color: var(--gold);
+}
+select, button {
+    font-family: var(--font-mono);
+    font-size: 1.05rem;
+    padding: 6px 12px;
+    background: var(--bubble-border);
+    color: var(--gold);
+    border: 2px solid var(--gold);
+    border-radius: 4px;
+    cursor: pointer;
+}
+select:hover, button:hover { background: var(--gold); color: var(--bubble-border); }
+button.primary {
+    background: #e74c3c;
+    color: #fff;
+    border-color: #fff;
+    font-family: var(--font-pixel);
+    font-size: .65rem;
+    padding: 10px 20px;
+}
+button.primary:hover { background: #fff; color: #e74c3c; }
+
+/* === PIXEL ART (mantém nitidez) === */
+.pixel {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+/* === FOOTER === */
+.footer {
+    text-align: center;
+    padding: 14px;
+    background: rgba(0,0,0,.3);
+    border-radius: 8px;
+    color: #aaa;
+    font-size: 1rem;
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>🎮 PREVIEW BALÃO DE FALA</h1>
+    <p class="subtitle">Stardew Valley Style • Pixel Art</p>
+
+    <!-- Seletor de personagem -->
+    <div class="char-selector">
+        <button class="char-btn active" data-char="carlos" title="Chefe Carlos">
+            <svg class="pixel" width="48" height="64" viewBox="0 0 12 16">
+                <rect x="3" y="2" width="6" height="5" fill="#f5c6a0"/>
+                <rect x="4" y="3" width="1" height="1" fill="#2c1810"/>
+                <rect x="7" y="3" width="1" height="1" fill="#2c1810"/>
+                <rect x="4" y="6" width="4" height="1" fill="#4a3728"/>
+                <rect x="2" y="7" width="8" height="6" fill="#e74c3c"/>
+                <rect x="2" y="7" width="1" height="6" fill="#27ae60"/>
+                <rect x="9" y="7" width="1" height="6" fill="#27ae60"/>
+                <rect x="2" y="13" width="3" height="3" fill="#34495e"/>
+                <rect x="7" y="13" width="3" height="3" fill="#34495e"/>
+            </svg>
+        </button>
+        <button class="char-btn" data-char="novato" title="Novato(a)">
+            <svg class="pixel" width="48" height="64" viewBox="0 0 12 16">
+                <rect x="3" y="1" width="6" height="4" fill="#3a1f0a"/>
+                <rect x="3" y="3" width="6" height="4" fill="#fddcb5"/>
+                <rect x="4" y="4" width="1" height="1" fill="#2c1810"/>
+                <rect x="7" y="4" width="1" height="1" fill="#2c1810"/>
+                <rect x="5" y="6" width="2" height="1" fill="#d47a6a"/>
+                <rect x="2" y="7" width="8" height="6" fill="#27ae60"/>
+                <rect x="3" y="8" width="2" height="2" fill="#fff"/>
+                <rect x="2" y="13" width="3" height="3" fill="#2c3e50"/>
+                <rect x="7" y="13" width="3" height="3" fill="#2c3e50"/>
+            </svg>
+        </button>
+        <button class="char-btn" data-char="hacker" title="Hacker">
+            <svg class="pixel" width="48" height="64" viewBox="0 0 12 16">
+                <rect x="3" y="0" width="6" height="8" fill="#1a1a1a"/>
+                <rect x="3" y="4" width="6" height="4" fill="#2a2a2a"/>
+                <rect x="4" y="5" width="1" height="1" fill="#ff0000"/>
+                <rect x="7" y="5" width="1" height="1" fill="#ff0000"/>
+                <rect x="4" y="7" width="4" height="1" fill="#444"/>
+                <rect x="2" y="8" width="8" height="5" fill="#1a1a1a"/>
+                <rect x="2" y="13" width="3" height="3" fill="#0a0a0a"/>
+                <rect x="7" y="13" width="3" height="3" fill="#0a0a0a"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Cena -->
+    <div class="scene">
+        <div class="cloud cloud-1"></div>
+        <div class="cloud cloud-2"></div>
+
+        <div id="bubble" class="bubble" style="border-color: #e74c3c">
+            <span id="speaker" class="speaker" style="color: #e74c3c">CHEFE CARLOS</span>
+            <span id="text"></span>
+            <span class="skip-hint">[ESPAÇO para pular]</span>
+        </div>
+
+        <div class="character" id="character"></div>
+    </div>
+
+    <!-- Controles -->
+    <div class="controls">
+        <div class="control-group">
+            <label>VELOCIDADE</label>
+            <select id="speed">
+                <option value="80">Lenta</option>
+                <option value="40" selected>Normal</option>
+                <option value="20">Rápida</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label>SOM</label>
+            <select id="sound">
+                <option value="off">Mudo</option>
+                <option value="on" selected>Blip</option>
+            </select>
+        </div>
+        <button class="primary" id="nextBtn">▶ PRÓXIMO</button>
+    </div>
+
+    <p class="footer">💜 Preview só pra você ver como vai ficar.<br>
+    Quando gostar, a gente implementa no Security Alert!</p>
+</div>
+
+<script>
+// === DADOS (personagem + falas) ===
+const DATA = {
+    carlos: {
+        name: 'CHEFE CARLOS',
+        color: '#e74c3c',
+        svg: `<svg class="pixel" width="120" height="160" viewBox="0 0 12 16">
+            <rect x="3" y="2" width="6" height="5" fill="#f5c6a0"/>
+            <rect x="4" y="3" width="1" height="1" fill="#2c1810"/>
+            <rect x="7" y="3" width="1" height="1" fill="#2c1810"/>
+            <rect x="4" y="6" width="4" height="1" fill="#4a3728"/>
+            <rect x="2" y="7" width="8" height="6" fill="#e74c3c"/>
+            <rect x="2" y="7" width="1" height="6" fill="#27ae60"/>
+            <rect x="9" y="7" width="1" height="6" fill="#27ae60"/>
+            <rect x="2" y="13" width="3" height="3" fill="#34495e"/>
+            <rect x="7" y="13" width="3" height="3" fill="#34495e"/>
+        </svg>`,
+        lines: [
+            "Ola, novato! Bem-vindo a Leroy Merlin! Eu sou o Carlos, seu mentor.",
+            "Hoje vamos aprender sobre senhas fortes. Senhas fracas sao a porta de entrada para hackers!",
+            "Muito bem! Voce tem um futuro brilhante aqui na empresa!",
+            "Cuidado com phishing! Sempre verifique o remetente antes de clicar em qualquer link."
+        ]
+    },
+    novato: {
+        name: 'JOGADOR NOVATO',
+        color: '#27ae60',
+        svg: `<svg class="pixel" width="120" height="160" viewBox="0 0 12 16">
+            <rect x="3" y="1" width="6" height="4" fill="#3a1f0a"/>
+            <rect x="3" y="3" width="6" height="4" fill="#fddcb5"/>
+            <rect x="4" y="4" width="1" height="1" fill="#2c1810"/>
+            <rect x="7" y="4" width="1" height="1" fill="#2c1810"/>
+            <rect x="5" y="6" width="2" height="1" fill="#d47a6a"/>
+            <rect x="2" y="7" width="8" height="6" fill="#27ae60"/>
+            <rect x="3" y="8" width="2" height="2" fill="#fff"/>
+            <rect x="2" y="13" width="3" height="3" fill="#2c3e50"/>
+            <rect x="7" y="13" width="3" height="3" fill="#2c3e50"/>
+        </svg>`,
+        lines: [
+            "Ola, chefe! Estou pronto para aprender!",
+            "Nossa, nao fazia ideia que senhas eram tao importantes!",
+            "Vou ficar atento aos ataques de phishing, prometo!"
+        ]
+    },
+    hacker: {
+        name: 'H4CK3R 0SCUR0',
+        color: '#ff0000',
+        svg: `<svg class="pixel" width="120" height="160" viewBox="0 0 12 16">
+            <rect x="3" y="0" width="6" height="8" fill="#1a1a1a"/>
+            <rect x="3" y="4" width="6" height="4" fill="#2a2a2a"/>
+            <rect x="4" y="5" width="1" height="1" fill="#ff0000"/>
+            <rect x="7" y="5" width="1" height="1" fill="#ff0000"/>
+            <rect x="4" y="7" width="4" height="1" fill="#444"/>
+            <rect x="2" y="8" width="8" height="5" fill="#1a1a1a"/>
+            <rect x="2" y="13" width="3" height="3" fill="#0a0a0a"/>
+            <rect x="7" y="13" width="3" height="3" fill="#0a0a0a"/>
+        </svg>`,
+        lines: [
+            "Muhahahaha! Mais uma vitima caiu no meu phishing...",
+            "Sua senha de '123456' nao vai te salvar!",
+            "Voce nunca vai descobrir meu plano maligno!"
+        ]
+    }
+};
+
+// === STATE ===
+let cur = 'carlos';
+let line = 0;
+let typing = false;
+let timer = null;
+let audio = null;
+
+// === TYPEWRITER (letra por letra) ===
+function type(text) {
+    const el = document.getElementById('text');
+    const speed = +document.getElementById('speed').value;
+    let i = 0;
+    clearInterval(timer);
+    el.innerHTML = '<span class="cursor"></span>';
+    typing = true;
+
+    timer = setInterval(() => {
+        if (i < text.length) {
+            el.innerHTML = text.substring(0, ++i) + '<span class="cursor"></span>';
+            blip();
+        } else {
+            clearInterval(timer);
+            typing = false;
+            setTimeout(() => el.innerHTML = text, 800);
+        }
+    }, speed);
+}
+
+function skip() {
+    if (!typing) return;
+    clearInterval(timer);
+    document.getElementById('text').innerHTML = DATA[cur].lines[line];
+    typing = false;
+}
+
+// === SOM (blip estilo máquina de escrever) ===
+function blip() {
+    if (document.getElementById('sound').value !== 'on') return;
+    try {
+        audio ??= new (AudioContext || webkitAudioContext)();
+        const osc = audio.createOscillator();
+        const gain = audio.createGain();
+        osc.type = 'square';
+        osc.frequency.value = 800 + Math.random() * 200;
+        gain.gain.value = .05;
+        osc.connect(gain).connect(audio.destination);
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(.001, audio.currentTime + .05);
+        osc.stop(audio.currentTime + .05);
+    } catch {}
+}
+
+// === SWITCH PERSONAGEM ===
+function switchChar(key) {
+    cur = key;
+    line = 0;
+    const d = DATA[key];
+    document.querySelectorAll('.char-btn').forEach(b => b.classList.toggle('active', b.dataset.char === key));
+    document.getElementById('character').innerHTML = d.svg;
+    document.getElementById('speaker').textContent = d.name;
+    document.getElementById('speaker').style.color = d.color;
+    document.getElementById('bubble').style.borderColor = d.color;
+    const bubble = document.getElementById('bubble');
+    bubble.style.animation = 'none';
+    bubble.offsetHeight; // reflow
+    bubble.style.animation = '';
+    type(d.lines[0]);
+}
+
+function next() {
+    if (typing) return skip();
+    line = (line + 1) % DATA[cur].lines.length;
+    type(DATA[cur].lines[line]);
+}
+
+// === EVENTS ===
+document.getElementById('nextBtn').addEventListener('click', next);
+document.querySelectorAll('.char-btn').forEach(b => b.addEventListener('click', () => switchChar(b.dataset.char)));
+document.addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); next(); } });
+
+// === INIT ===
+switchChar('carlos');
+</script>
+</body>
+</html>

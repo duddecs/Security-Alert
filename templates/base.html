@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Security Alert{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+</head>
+<body>
+    {% if session.user_id %}
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{{ url_for('dashboard') }}" class="nav-brand">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Security Alert" class="nav-logo">
+                <span>Security Alert</span>
+            </a>
+            <div class="nav-links">
+                <span class="nav-user">👤 {{ session.username }}</span>
+                <a href="{{ url_for('dashboard') }}" class="nav-link">Dashboard</a>
+                <a href="{{ url_for('game_start') }}" class="btn btn-sm btn-success">🎮 Novo Jogo</a>
+                <a href="{{ url_for('logout') }}" class="nav-link">Sair</a>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>🔐 Security Alert &copy; 2026 | Challenge Leroy Merlin | FIAP - Defesa Cibernetica</p>
+        <p style="font-size: 0.8em;">Created by Ana Luiza, Maria Eduarda, Thalia Aiko, Pedro Henrique </p>
+    </footer>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

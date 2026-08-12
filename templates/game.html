@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}{{ phase_data.title }} - Security Alert{% endblock %}
+{% block content %}
+<div class="game-container">
+    {# Barra de progresso #}
+    <div class="game-progress">
+        {% for p in range(1, total_phases + 1) %}
+        <div class="progress-phase {% if p < phase %}completed{% elif p == phase %}active{% endif %}">
+            <span class="progress-icon">
+                {% if GAME_PHASES is not defined %}
+                    {# Variavel injetada #}
+                {% endif %}
+                {% if p == 1 %}🔑{% elif p == 2 %}⚠️{% else %}🎣{% endif %}
+            </span>
+            <span class="progress-label">Fase {{ p }}</span>
+        </div>
+        {% if not loop.last %}
+        <div class="progress-line {% if loop.index < phase %}completed{% endif %}"></div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    {# Indicador de sub-fase #}
+    <div class="subphase-indicator">
+        {% for s in range(1, total_subs_in_phase + 1) %}
+        <span class="subphase-dot {% if s < sub %}done{% elif s == sub %}current{% endif %}"></span>
+        {% endfor %}
+    </div>
+
+    {# Conteudo principal #}
+    <div class="game-main">
+        {% if sub == 1 and not already_answered %}
+        {# Tela de anúncio da fase #}
+        <div class="phase-intro" style="border-color: {{ phase_data.color }}">
+            <div class="phase-intro-boss">
+                <img src="{{ url_for('static', filename='img/carlosviradoesquerda.png') }}"
+                alt="Chefe Carlos"
+                class="boss-character">
+                <div class="boss-info">
+                    <span class="boss-label">{{ phase_data.boss_name }}</span>
+                    <span class="boss-title">Seu Chefe & Mentor</span>
+                </div>
+            </div>
+            <div class="phase-intro-content">
+                <span class="phase-badge" style="background: {{ phase_data.color }}">{{ phase_data.icon }} {{ phase_data.title }}</span>
+
+                {# FALA DO CHEFE (apenas texto rolando, sem balao) #}
+                <div class="boss-speech">
+                    <span class="boss-speech-name">{{ phase_data.boss_name }}:</span>
+                    <span class="boss-speech-text" data-text="{{ phase_data.explanation }}"></span>
+                </div>
+
+                <a href="#subphase-{{ sub }}" class="btn btn-primary btn-lg">Comecar Fase!</a>
+            </div>
+        </div>
+        {% endif %}
+
+        {# Questao da sub-fase #}
+        <div id="subphase-{{ sub }}" class="subphase-card" style="border-left: 5px solid {{ phase_data.color }}">
+            <div class="subphase-header">
+                <span class="subphase-num">Questao {{ sub }}/{{ total_subs_in_phase }}</span>
+                <span class="subphase-points">Vale 10 pontos</span>
+            </div>
+            <h2 class="subphase-title">{{ subphase_data.title }}</h2>
+
+            {% if already_answered %}
+            {# Ja respondeu - mostrar resultado e botao de continuar #}
+            <div class="answer-result {% if already_answered.correct %}correct{% else %}wrong{% endif %}">
+                <span class="result-emoji">{% if already_answered.correct %}✅{% else %}❌{% endif %}</span>
+                <strong>{% if already_answered.correct %}Voce acertou!{% else %}Voce errou...{% endif %}</strong>
+                {% if already_answered.correct %}
+                <p>{{ subphase_data.explanation_correct }}</p>
+                {% else %}
+                <p>{{ subphase_data.explanation_wrong }}</p>
+                {% endif %}
+            </div>
+            {% set next_sub = sub + 1 %}
+            {% set next_phase = phase %}
+            {% if next_sub > total_subs_in_phase %}
+                {% set next_phase = phase + 1 %}
+                {% set next_sub = 1 %}
+            {% endif %}
+            {% if next_phase <= total_phases %}
+            <a href="{{ url_for('game_play', game_id=game.id, phase=next_phase, sub=next_sub) }}" class="btn btn-primary btn-block mt-4">
+                {% if next_sub == 1 and next_phase != phase %}
+                Ir para Fase {{ next_phase }} →
+                {% else %}
+                Proxima Questao →
+                {% endif %}
+            </a>
+            {% else %}
+            <a href="{{ url_for('game_feedback', game_id=game.id) }}" class="btn btn-success btn-block mt-4">
+                🏆 Ver Resultado Final!
+            </a>
+            {% endif %}
+
+            {% else %}
+            {# Pergunta ativa #}
+            <p class="subphase-question">{{ subphase_data.question }}</p>
+
+            <div class="options-list" id="options-list">
+                {% for opt in subphase_data.options %}
+                <button class="option-btn" data-index="{{ loop.index0 }}"
+                        onclick="submitAnswer({{ loop.index0 }})">
+                    <span class="option-letter">{{ ['A','B','C','D'][loop.index0] }}</span>
+                    <span class="option-text">{{ opt }}</span>
+                </button>
+                {% endfor %}
+            </div>
+
+            {# Area de feedback (escondida ate responder) #}
+            <div id="answer-feedback" class="answer-result" style="display: none;">
+                <span id="feedback-emoji" class="result-emoji"></span>
+                <strong id="feedback-title"></strong>
+                <p id="feedback-text"></p>
+                <a id="feedback-next" href="#" class="btn btn-primary btn-block mt-4">Proxima Questao →</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/characters.js') }}"></script>
+<script>
+// Injetar personagem Chefe Carlos
+document.addEventListener('DOMContentLoaded', function() {
+    const bossDiv = document.getElementById('boss-char');
+    if (bossDiv) bossDiv.innerHTML = Characters.boss;
+
+    // ===== TYPEWRITER NA FALA DO CHEFE =====
+    const msgEl = document.querySelector('.boss-speech-text');
+    if (msgEl && msgEl.dataset.text) {
+        const fullText = msgEl.dataset.text;
+        msgEl.textContent = '';
+        let i = 0;
+        const speed = 35;  // ms por letra (menor = mais rapido)
+
+        function typeChar() {
+            if (i < fullText.length) {
+                msgEl.textContent += fullText[i];
+                i++;
+                setTimeout(typeChar, speed);
+            } else {
+                msgEl.classList.add('done');
+            }
+        }
+        typeChar();
+    }
+});
+
+function submitAnswer(answerIndex) {
+    const buttons = document.querySelectorAll('.option-btn');
+    buttons.forEach(b => b.disabled = true);
+    buttons.forEach(b => b.style.pointerEvents = 'none');
+
+    const correctIndex = {{ subphase_data.correct }};
+    const selected = buttons[answerIndex];
+
+    // Marcar visualmente
+    buttons.forEach((b, i) => {
+        if (i === correctIndex) {
+            b.classList.add('option-correct');
+        } else if (i === answerIndex && answerIndex !== correctIndex) {
+            b.classList.add('option-wrong');
+        }
+    });
+
+    // Enviar resposta
+    const formData = new FormData();
+    formData.append('phase', '{{ phase }}');
+    formData.append('sub', '{{ sub }}');
+    formData.append('answer', answerIndex);
+
+    fetch("{{ url_for('game_answer', game_id=game.id) }}", {
+        method: 'POST',
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        const feedback = document.getElementById('answer-feedback');
+        const emoji = document.getElementById('feedback-emoji');
+        const title = document.getElementById('feedback-title');
+        const text = document.getElementById('feedback-text');
+        const next = document.getElementById('feedback-next');
+
+        feedback.style.display = 'block';
+        feedback.className = 'answer-result ' + (data.correct ? 'correct' : 'wrong');
+        emoji.textContent = data.correct ? '✅' : '❌';
+        title.textContent = data.explanation_title;
+        text.textContent = data.explanation;
+        next.href = data.next_url;
+
+        if (data.is_final) {
+            next.textContent = '🏆 Ver Resultado Final!';
+            next.classList.add('btn-success');
+        }
+
+        // Esconder opcoes
+        document.getElementById('options-list').style.display = 'none';
+
+        // Scroll suave
+        feedback.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    })
+    .catch(err => {
+        console.error('Erro:', err);
+        buttons.forEach(b => {
+            b.disabled = false;
+            b.style.pointerEvents = 'auto';
+        });
+    });
+}
+</script>
+{% endblock %}
