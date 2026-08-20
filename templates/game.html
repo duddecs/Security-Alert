@@ -10,7 +10,7 @@
                 {% if GAME_PHASES is not defined %}
                     {# Variavel injetada #}
                 {% endif %}
-                {% if p == 1 %}🔑{% elif p == 2 %}⚠️{% else %}🎣{% endif %}
+                {% if p == 1 %}🔑{% elif p == 2 %}⚠️{% elif p == 3 %}🎣{% else %}📞{% endif %}
             </span>
             <span class="progress-label">Fase {{ p }}</span>
         </div>
@@ -98,6 +98,163 @@
             {# Pergunta ativa #}
             <p class="subphase-question">{{ subphase_data.question }}</p>
 
+            {% if subphase_data.mode == 'sms_sim' %}
+            {# Simulação de SMS suspeito (Fase 3, Questao 2) #}
+            <div class="sms-phone">
+                <div class="sms-phone-header">
+                    <span class="sms-contact-avatar">🚨</span>
+                    <div class="sms-contact-info">
+                        <span class="sms-contact-name">Desconhecido</span>
+                        <span class="sms-contact-number">+55 11 99999-0000</span>
+                    </div>
+                    <span class="sms-phone-status">Hoje, 14:32</span>
+                </div>
+                <div class="sms-phone-body">
+                    <div class="sms-bubble">
+                        <p><span class="sms-bubble-attention">🛑 ALERTA DE SEGURANSA!!!</span></p>
+                        <p>
+                            LeroyMerlin: nossos sistemas forão invadidos e seus dados pessuais
+                            forão vazados na internet!
+                        </p>
+                        <p>
+                            CLICA AQUI pra verificar se sua conta está em risco:
+                            <span class="sms-link">bit.ly/l-m-vazou</span>
+                        </p>
+                        <p>
+                            <span class="sms-bubble-attention">⚠️ Isso e URGENTE!</span>
+                            Seu acesso pode ser bloqueado a qualquer momento.
+                            NÃO compartilhe essa mensagem com ninguém.
+                        </p>
+                        <span class="sms-bubble-time">14:32 ✓✓</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if subphase_data.mode == 'site_sim' %}
+            {# Simulação de site clonado da Leroy Merlin (Fase 3, Questao 3) #}
+            <div class="browser-sim">
+                <div class="browser-bar">
+                    <span class="browser-dots"><i></i><i></i><i></i></span>
+                    <div class="browser-url">
+                        <span class="browser-lock">⚠️</span>
+                        <span class="browser-address">https://leroymerlin-seguranca.com</span>
+                    </div>
+                </div>
+                <div class="browser-page">
+                    <div class="site-header">
+                        <span class="site-logo">🛠️ LeroyMerlin</span>
+                        <span class="site-nav">Ofertas · Departamentos · Conta</span>
+                    </div>
+                    <div class="site-banner">
+                        <span class="site-banner-title">🔥 PROMOÇÃO IMPERDIVEL: 90% DE DESCONTO!!!</span>
+                        <span class="site-banner-sub">Ative seu cupom agora antes que acabe!</span>
+                    </div>
+                    <div class="site-login">
+                        <span class="site-login-title">Acesse sua conta para ativar o cupom:</span>
+                        <label>E-mail ou CPF:</label>
+                        <div class="site-input">digite aqui seu e-mail</div>
+                        <label>Senha:</label>
+                        <div class="site-input">digite sua senha</div>
+                        <div class="site-btn">ENTRAR AGORA</div>
+                    </div>
+                    <div class="site-warning">⚠️ Este site não é seguro (certificado inválido)</div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if subphase_data.mode == 'call_sim' %}
+            {# Simulação de ligação do farsante (Fase 4) #}
+            <div class="call-phone">
+                <div class="call-screen">
+                    <span class="call-avatar">📞</span>
+                    <span class="call-name">"Setor de Segurança"</span>
+                    <span class="call-number">Número privado · +55 11 9XXXX-XXXX</span>
+                    <span class="call-tag">CHAMADA RECEBIDA · HOJE, 13:05</span>
+                    <div class="call-transcript">
+                        <div class="call-bubble">
+                            "Olá! Aqui é o setor de segurança da Leroy Merlin. Detectamos um acesso
+                            suspeito na sua conta. Para confirmar sua identidade, me diga seu CPF
+                            completo e a data da sua admissão."
+                        </div>
+                        <div class="call-bubble">
+                            "É urgente! Se você não confirmar agora, seu acesso será bloqueado
+                            imediatamente!"
+                        </div>
+                    </div>
+                    <div class="call-controls">
+                        <button class="call-btn call-decline" disabled>✕</button>
+                        <button class="call-btn call-accept" disabled>✆</button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if subphase_data.mode == 'email_compare' %}
+            {# Caixa de entrada estilo Gmail: dois e-mails, um abaixo do outro #}
+            <div id="options-list">
+                <div class="gmail-inbox">
+                    <div class="gmail-inbox-header">
+                        <span class="gmail-inbox-icon">📬</span>
+                        <span class="gmail-inbox-title">Caixa de entrada</span>
+                        <span class="gmail-inbox-count">2 não lidos</span>
+                    </div>
+
+                    <div class="gmail-list">
+                        {% for email in subphase_data.emails %}
+                        <div class="gmail-row {% if email.is_fake %}unread{% endif %} open"
+                             data-email="{{ loop.index0 }}" onclick="toggleEmail({{ loop.index0 }})">
+                            <span class="gmail-avatar">{{ email.from_name[:1] }}</span>
+                            <div class="gmail-row-main">
+                                <span class="gmail-row-sender">{{ email.from_name }}</span>
+                                <span class="gmail-row-subject">{{ email.subject }}</span>
+                                <span class="gmail-row-preview">{{ email.body[0] }}</span>
+                            </div>
+                            <span class="gmail-row-time">{{ email.time }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    {% for email in subphase_data.emails %}
+                    <div class="gmail-message" id="gmail-message-{{ loop.index0 }}">
+                        <div class="gmail-message-top">
+                            <span class="gmail-avatar gmail-avatar-lg">{{ email.from_name[:1] }}</span>
+                            <div class="gmail-message-sender-block">
+                                <span class="gmail-message-sender">{{ email.from_name }}</span>
+                                <span class="gmail-message-email">&lt;{{ email.from_email }}&gt;</span>
+                            </div>
+                            <span class="gmail-message-time">{{ email.time }}</span>
+                        </div>
+                        <div class="gmail-message-subject">{{ email.subject }}</div>
+
+                        <div class="gmail-meta">
+                            <div class="gmail-meta-row">
+                                <span class="gmail-meta-label">De:</span>
+                                {{ email.from_name }} &lt;{{ email.from_email }}&gt;
+                            </div>
+                            <div class="gmail-meta-row">
+                                <span class="gmail-meta-label">Para:</span>
+                                {{ user_email }}
+                            </div>
+                        </div>
+
+                        <div class="gmail-message-body">
+                            {% for para in email.body %}
+                            <p>{{ para }}</p>
+                            {% endfor %}
+                        </div>
+
+                        <div class="gmail-actions">
+                            <button class="option-btn email-report-btn" onclick="submitAnswer({{ loop.index0 }})">
+                                🚩 Reportar como phishing
+                            </button>
+                            <button class="gmail-action-btn" onclick="toggleEmail({{ loop.index0 }})">🗑️ Excluir</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
             <div class="options-list" id="options-list">
                 {% for opt in subphase_data.options %}
                 <button class="option-btn" data-index="{{ loop.index0 }}"
@@ -107,6 +264,7 @@
                 </button>
                 {% endfor %}
             </div>
+            {% endif %}
 
             {# Area de feedback (escondida ate responder) #}
             <div id="answer-feedback" class="answer-result" style="display: none;">
@@ -151,19 +309,27 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function submitAnswer(answerIndex) {
-    const buttons = document.querySelectorAll('.option-btn');
+    // Suporta modo normal (options) e modo de comparacao de e-mails (Gmail)
+    const emailMode = !!document.querySelector('.gmail-message');
+    const items = emailMode
+        ? Array.from(document.querySelectorAll('.gmail-message'))
+        : Array.from(document.querySelectorAll('.option-btn'));
+    const buttons = emailMode
+        ? Array.from(document.querySelectorAll('.email-report-btn'))
+        : items;
+
     buttons.forEach(b => b.disabled = true);
     buttons.forEach(b => b.style.pointerEvents = 'none');
+    items.forEach(el => el.style.pointerEvents = 'none');
 
     const correctIndex = {{ subphase_data.correct }};
-    const selected = buttons[answerIndex];
 
     // Marcar visualmente
-    buttons.forEach((b, i) => {
+    items.forEach((el, i) => {
         if (i === correctIndex) {
-            b.classList.add('option-correct');
+            el.classList.add('option-correct');
         } else if (i === answerIndex && answerIndex !== correctIndex) {
-            b.classList.add('option-wrong');
+            el.classList.add('option-wrong');
         }
     });
 
@@ -197,7 +363,7 @@ function submitAnswer(answerIndex) {
             next.classList.add('btn-success');
         }
 
-        // Esconder opcoes
+        // Esconder opcoes / e-mails
         document.getElementById('options-list').style.display = 'none';
 
         // Scroll suave
@@ -209,7 +375,18 @@ function submitAnswer(answerIndex) {
             b.disabled = false;
             b.style.pointerEvents = 'auto';
         });
+        items.forEach(el => el.style.pointerEvents = 'auto');
     });
+}
+
+// Alternar abrir/fechar um e-mail (estilo Gmail)
+function toggleEmail(index) {
+    const msg = document.getElementById('gmail-message-' + index);
+    const row = document.querySelector('.gmail-row[data-email="' + index + '"]');
+    if (!msg) return;
+    const hidden = msg.style.display === 'none';
+    msg.style.display = hidden ? 'block' : 'none';
+    if (row) row.classList.toggle('open', hidden);
 }
 </script>
 {% endblock %}
