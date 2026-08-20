@@ -252,72 +252,152 @@ GAME_PHASES = {
             {
                 "id": 1,
                 "title": "E-mail suspeito",
+                "mode": "email_compare",
                 "question": (
-                    "Voce recebe um e-mail urgente do 'TI' pedindo para clicar em um link "
-                    "e atualizar sua senha imediatamente. O remetente é 'ti@leroy-merlin.com.br' (com hifen). "
-                    "O e-mail oficial da empresa é @leroymerlin.com.br (sem hifen). O que você faz?"
+                    "Você recebeu DOIS e-mails no seu correio corporativo. Um deles é falso e está "
+                    "tentando enganar você. Compare os dois e REPORTE ao TI o e-mail que você "
+                    "acredita ser o FALSO."
                 ),
-                "options": [
-                    "Clico no link, o e-mail parece oficial",
-                    "Ignoro e deleto",
-                    "Reporto como phishing e nao clico em nada",
-                    "Respondo perguntando se é verdade"
+                "emails": [
+                    {
+                        "label": "E-mail 1",
+                        "from_name": "Recursos Humanos",
+                        "from_email": "rh@leroymerlin.com.br",
+                        "time": "09:14",
+                        "subject": "🎓 Treinamento Security Alert - Certificado disponível",
+                        "body": [
+                            "Prezado(a) colaborador(a),",
+                            "Parabéns por concluir o treinamento de cibersegurança Security Alert! Seu certificado já está disponível no Portal do Colaborador. Acesse https://portal.leroymerlin.com.br e procure por 'Meus Treinamentos'.",
+                            "Em caso de dúvidas, fale com a equipe de RH",
+                            "Atenciosamente, Equipe de RH."
+                        ],
+                        "is_fake": False
+                    },
+                    {
+                        "label": "E-mail 2",
+                        "from_name": "Departamento de TI",
+                        "from_email": "ti@ler0y-merlin.com.br",
+                        "time": "09:30",
+                        "subject": "⚠️ AÇÃO NECESSÁRIA: atualize sua senha hoje!!",
+                        "body": [
+                            "Prezado(a) colaborador(a),",
+                            "Detectamos atividade suspeita na sua conta. Para manter seus dados seguros, atualize sua senha imediatamente clicando no link abaixo.",
+                            "https://portall.ler0ymerIin.com.br/atualizar-senha",
+                            "Caso não faça isso em até 24 horas, seu acesso será suspenso.",
+                            "Departamento de Segurança da Informação."
+                        ],
+                        "is_fake": True
+                    }
                 ],
-                "correct": 2,
+                "correct": 1,
                 "explanation_correct": (
-                    "Mandou bem! Você notou o domínio falso (com hifen). "
-                    "Sempre verifique o endereco REAL do remetente e reporte e-mails suspeitos ao TI."
+                    "🎉 Parabéns! Você identificou e reportou o e-mail FALSO corretamente! "
+                    "O e-mail 2 vinha de 'ti@ler0y-merlin.com.br' — repare no HÍFEN e no número 0 do domínio. "
+                    "O domínio oficial da Leroy Merlin é @leroymerlin.com.br (sem hífen). "
+                    "Além disso, ele usava um link suspeito ('portall...') e tom de urgência, "
+                    "sinais clássicos de phishing. Reportar ao TI foi a atitude correta!"
                 ),
                 "explanation_wrong": (
-                    "Clicar em links de e-mails suspeitos é MUITO perigoso! "
-                    "Sempre verifique o domínio do remetente. Um hífen ou letra trocada faz toda a diferença. "
-                    "Na dúvida, NÃO CLIQUE e reporte!"
+                    "😔 Que Pena! Você reportou o e-mail VERDADEIRO! Comparando os dois: o e-mail 2 era o falso. "
+                    "Ele vinha de 'ti@ler0y-merlin.com.br' — repare que ele possui um número 0 e um HÍFEN do domínio. "
+                    "O domínio oficial é @leroymerlin.com.br (sem hífen). O e-mail falso também tinha "
+                    "um link suspeito ('portall.leroymerIin.com.br') e pressionava com urgência "
+                    "('seu acesso será suspenso'). Esses são os sinais de phishing que você deve observar!"
                 )
             },
             {
                 "id": 2,
                 "title": "SMS falso",
+                "mode": "sms_sim",
                 "question": (
-                    "Você recebe um SMS: 'Leroy Merlin: Seu ponto eletrônico está irregular. "
-                    "Regularize agora em bit.ly/3xY7-ponto ou sua folha de pagamento será bloqueada.' Você..."
+                    "Você recebeu este SMS no seu celular corporativo. "
+                    "Por que essa mensagem NÃO é legítima?"
                 ),
                 "options": [
-                    "Clica correndo. Não quero problemas com meu salário",
-                    "Ignora o SMS. Sei que o ponto e pelo sistema interno",
-                    "Encaminha para os colegas pra avisar",
-                    "Liga para o número que enviou o SMS"
+                    "Porque a Leroy Merlin nunca envia SMS aos colaboradores - Sinal de phishing",
+                    "Porque usa tom de urgência, link encurtado (bit.ly) e tem erros ortográficos - sinais clássicos de phishing",
+                    "Porque erros de ortografia não acontecem em mensagens de golpe",
+                    "Porque vazamento de dados não é um tema real de segurança"
                 ],
                 "correct": 1,
                 "explanation_correct": (
-                    "Isso ai! Links encurtados (bit.ly, tinyurl, etc.) são um clássico de phishing. "
-                    "Além disso, o ponto eletronico e feito pelo sistema interno, nunca por SMS."
+                    "Excelente! 🎉 Você identificou os sinais de phishing: tom de urgência, "
+                    "link encurtado (bit.ly) e vários erros ortográficos ('forão', 'pessuais', 'SEGURANSA'). "
+                    "Mensagens oficiais da Leroy Merlin são revisadas e nunca pedem ação urgente por SMS. "
+                    "Exclua a mensagem e reporte ao TI!"
                 ),
                 "explanation_wrong": (
-                    "Golpe classico! SMS com urgência e links encurtados quase sempre são phishing. "
-                    "A Leroy Merlin nunca pediria para regularizar o ponto por um link de SMS."
+                    "Quase lá! Os sinais de golpe eram: tom de urgência ('URGENTE', 'será bloqueado'), "
+                    "link encurtado (bit.ly) e vários erros ortográficos ('forão', 'pessuais', 'SEGURANSA'). "
+                    "Mensagens legítimas da empresa não usam links encurtados nem pedem ação imediata por SMS."
                 )
             },
             {
                 "id": 3,
                 "title": "Site clonado",
+                "mode": "site_sim",
                 "question": (
-                    "Voce acessa um site idêntico ao portal da Leroy Merlin, mas a URL é "
-                    "'leroymerlin-seguranca.com' em vez de 'leroymerlin.com.br'. Você..."
+                    "Você clicou em um link e caiu neste site, que se parece com o portal da "
+                    "Leroy Merlin. Por que este site é FALSO?"
                 ),
                 "options": [
-                    "Faz login.O site é identico",
-                    "Fecha a página e reporta ao TI",
-                    "Navega um pouco para ver se é real mesmo",
-                    "Tento logar com uma senha errada só para testar"
+                    "Porque a URL tem hífen (leroymerlin-seguranca.com) e não é o domínio oficial leroymerlin.com.br",
+                    "Porque a página é muito bonita para ser um site falso",
+                    "Porque promoções com 90% de desconto sempre são reais",
+                    "Porque pedir login é algo que nenhum site legítimo faz"
+                ],
+                "correct": 0,
+                "explanation_correct": (
+                    "Excelente! 🎉 O domínio oficial da Leroy Merlin é leroymerlin.com.br. "
+                    "Este site usava 'leroymerlin-seguranca.com' (com hífen), um domínio falso criado "
+                    "para enganar. Além disso, o alerta de 'site não seguro' e a promoção absurda "
+                    "de 90% de desconto são fortes sinais de golpe. Feche a página e reporte ao TI!"
+                ),
+                "explanation_wrong": (
+                    "Cuidado! 🚨 O site era falso porque a URL tinha um hífen: "
+                    "'leroymerlin-seguranca.com' em vez do domínio oficial 'leroymerlin.com.br'. "
+                    "Promoções exageradas, alertas de 'site não seguro' e pedidos de login fora do "
+                    "site oficial são sinais clássicos de phishing. NUNCA digite suas credenciais em "
+                    "sites com URLs suspeitas."
+                )
+            }
+        ]
+    },
+    4: {
+        "title": "Fase 4: Engenharia Social",
+        "icon": "📞",
+        "color": "#f2d38b",
+        "boss_name": "Chefe Carlos",
+        "explanation": (
+            "Você chegou à última fase do treinamento! Agora vamos falar sobre engenharia social: "
+            "golpistas que usam a confiança e o medo para enganar. Vou simular uma ligação de um "
+            "farsante e você precisa decidir como agir com segurança."
+        ),
+        "subphases": [
+            {
+                "id": 1,
+                "title": "Ligação do farsante",
+                "mode": "call_sim",
+                "question": (
+                    "Você recebeu esta ligação de alguém se passando pelo setor de segurança da "
+                    "Leroy Merlin e pedindo seus dados. Como você deve proceder?"
+                ),
+                "options": [
+                    "Passo meu CPF completo, parece ser legítimo",
+                    "Desligo a ligação e confirmo com o TI pelos canais oficiais da empresa",
+                    "Informo meus dados, mas peço para a pessoa confirmar o nome dela primeiro",
+                    "Dou só a data de admissão, não é tão grave"
                 ],
                 "correct": 1,
                 "explanation_correct": (
-                    "Perfeito! Sites clonados sao uma técnica comum de phishing. "
-                    "Sempre verifique se a URL na barra de enderecos é realmente a oficial antes de digitar qualquer dado."
+                    "Perfeito! 🎉 Você concluiu o treinamento com maestria! Desligar e confirmar "
+                    "pelos canais oficiais é a atitude certa. Empresas legítimas NUNCA pedem dados "
+                    "sensíveis por telefone. O golpista usava engenharia social, e você não caiu!"
                 ),
                 "explanation_wrong": (
-                    "Cuidado! Você quase caiu em um site clonado. Mesmo sendo visualmente idêntico, "
-                    "a URL entregou a farsa. NUNCA digite suas credenciais em sites com URLs suspeitas."
+                    "Cuidado! 🚨 Isso é engenharia social: o golpista se passa por alguém de "
+                    "confiança para roubar seus dados. Nunca informe CPF, senha ou dados pessoais "
+                    "por telefone. Desligue e confirme com o TI pelos canais oficiais da empresa."
                 )
             }
         ]
@@ -520,13 +600,13 @@ def game_start():
     # Criar uma nova sessao de jogo
     cursor = db.execute(
         "INSERT INTO game_sessions (user_id, max_score) VALUES (?, ?)",
-        (session['user_id'], 30)  # 3 fases x 3 subfases x 10 pontos = 90? Vou ajustar
+        (session['user_id'], 100)  # 10 questoes x 10 pontos
     )
     db.commit()
     game_id = cursor.lastrowid
 
     # Corrigir max_score
-    db.execute("UPDATE game_sessions SET max_score = 90 WHERE id = ?", (game_id,))
+    db.execute("UPDATE game_sessions SET max_score = 100 WHERE id = ?", (game_id,))
     db.commit()
 
     return redirect(url_for('game_play', game_id=game_id, phase=1, sub=1))
@@ -573,6 +653,12 @@ def game_play(game_id, phase, sub):
         (game_id, phase, sub)
     ).fetchone()
 
+    # Email cadastrado pelo usuario (usado como destinatario na simulacao de e-mail)
+    user_email = db.execute(
+        "SELECT email FROM users WHERE id = ?",
+        (session['user_id'],)
+    ).fetchone()['email']
+
     return render_template('game.html',
                          game=game,
                          phase=phase,
@@ -580,6 +666,7 @@ def game_play(game_id, phase, sub):
                          phase_data=phase_data,
                          subphase_data=subphase_data,
                          already_answered=already_answered,
+                         user_email=user_email,
                          total_phases=len(GAME_PHASES),
                          total_subs_in_phase=len(phase_data['subphases']))
 
