@@ -165,69 +165,142 @@ GAME_PHASES = {
         "color": "#a8d89e",
         "boss_name": "Chefe Carlos",
         "explanation": (
-            "Ótimo trabalho na primeira fase! Agora Carlos vai falar sobre algo muito comum: "
-            "a negligência. Muitos ataques acontecem por simples falta de atenção. "
-            "Vamos aprender a evitar esses vacilos!"
+            "Muito bem até aqui! Agora vou testar sua atenção com uma tarefa diferente. "
+            "Na empresa lidamos com todo tipo de arquivo — e cada um tem um nível de acesso. "
+            "Você vai receber 5 documentos e deve classificá-los como Público, Interno ou Confidencial. "
+            "Um documento no lugar errado pode vazar informações sigilosas. Vamos lá!"
         ),
+        "classify": True,
+        "classification_labels": {
+            "Público": "Pode ser compartilhado livremente.",
+            "Interno": "Uso apenas dentro da empresa.",
+            "Confidencial": "Acesso restrito a pessoas autorizadas."
+        },
         "subphases": [
             {
                 "id": 1,
-                "title": "Estação de trabalho",
-                "question": "Você vai ao banheiro e deixa seu computador...",
-                "options": [
-                    "Desbloqueado, volto rápido mesmo",
-                    "So coloco a tela um pouco abaixada",
-                    "Bloqueio a tela (Windows + L) antes de sair",
-                    "Peço para o colega do lado dar uma olhada"
-                ],
+                "title": "folha_de_pagamento_marco.xlsx",
+                "question": (
+                    "FOLHA DE PAGAMENTO — COMPETÊNCIA MARÇO/2026\n\n"
+                    "Matrícula | Nome | CPF | Cargo | Salário\n"
+                    "001234 | Maria Oliveira Santos | 123.456.789-00 | Gerente de Loja | R$ 12.500,00\n"
+                    "001567 | João Pereira Lima | 987.654.321-00 | Coordenador | R$ 8.900,00\n"
+                    "002345 | Ana Souza Costa | 456.789.123-00 | Caixa | R$ 2.450,00\n"
+                    "002890 | Carlos Mendes Rocha | 789.123.456-00 | Repositor | R$ 2.150,00\n\n"
+                    "TOTAL BRUTO: R$ 1.230.456,78 · Gerado pelo RH em 02/04/2026."
+                ),
+                "options": ["Público", "Interno", "Confidencial"],
                 "correct": 2,
                 "explanation_correct": (
-                    "Muito bem! Sempre bloqueie sua estação ao se ausentar, mesmo que seja por 1 minuto. "
-                    "Windows + L é seu melhor amigo no escritório!"
+                    "A folha de pagamento reúne dados pessoais e informações financeiras "
+                    "dos funcionários. Por isso, o acesso deve ser restrito a pessoas autorizadas."
                 ),
                 "explanation_wrong": (
-                    "Perigoso! Uma estação desbloqueada 'r um convite para que qualquer pessoa "
-                    "acesse informações sigilosas. Bloqueie SEMPRE, sem exceçao!"
+                    "Você errou. A classificação correta é Confidencial. "
+                    "Salários, CPF e informações financeiras são dados pessoais e informações "
+                    "de caráter privado que devem ter acesso restrito."
                 )
             },
             {
                 "id": 2,
-                "title": "Dispositivos móveis",
-                "question": "Você está no ônibus e percebe que seu celular corporativo sumiu da mochila. O que você deve fazer PRIMEIRO?",
-                "options": [
-                    "Esperar chegar em casa pra ver se está la",
-                    "Procurar no chão do ônibus",
-                    "Avisar IMEDIATAMENTE o TI e seu gestor",
-                    "Comprar outro e fingir que nada aconteceu"
-                ],
-                "correct": 2,
+                "title": "encarte_ofertas_semana14.pdf",
+                "question": (
+                    "ENCARTE DE OFERTAS — SEMANA DO CONSUMIDOR\n"
+                    "Válido de 12/03/2026 a 18/03/2026 nas lojas Leroy Merlin e no site.\n\n"
+                    "OFERTAS DA SEMANA\n"
+                    "• Tinta Esmalte Sintético 3,6L — de R$ 129,90 por R$ 89,90\n"
+                    "• Furadeira de Impacto 600W + maleta 13 peças — de R$ 259,00 por R$ 189,90\n"
+                    "• Kit Banheiro Completo (9 peças) — de R$ 349,00 por R$ 279,00\n"
+                    "• Luminária LED 10W bivolt — de R$ 29,90 por R$ 19,90\n"
+                    "• Mesa de Jantar + 4 cadeiras — de R$ 1.299,00 por R$ 999,00\n\n"
+                    "Sujeito a disponibilidade de estoque. Não acumulativo com outras promoções."
+                ),
+                "options": ["Público", "Interno", "Confidencial"],
+                "correct": 0,
                 "explanation_correct": (
-                    "Exato! Tempo é crucial. Quanto antes o TI souber, mais rápido podem "
-                    "bloquear o dispositivo remotamente, revogar seus acessos e proteger os dados da empresa."
+                    "Exato! O encarte é material de divulgação criado justamente para ser lido "
+                    "por todos os clientes. Informações públicas não têm restrição e podem circular livremente."
                 ),
                 "explanation_wrong": (
-                    "Não espere! Cada minuto conta quando um dispositivo corporativo é perdido. "
-                    "O TI pode bloquear e rastrear o aparelho remotamente, mas precisa ser avisado IMEDIATAMENTE."
+                    "Você errou. A classificação correta é Público. "
+                    "O encarte é distribuído nas lojas, no site e nas redes sociais para qualquer pessoa — "
+                    "não contém informação interna nem dado sensível."
                 )
             },
             {
                 "id": 3,
-                "title": "Informações sigilosas",
-                "question": "Em uma ligação, alguem se passando pelo RH pede seu CPF e data de admissão para 'confirmar seu cadastro'. Você...",
-                "options": [
-                    "Passo os dados, parece oficial",
-                    "Desconfio, desligo e verifico com o RH pelos canais oficiais",
-                    "Peco pra pessoa me mandar um e-mail",
-                    "Dou os dados, mas só o CPF"
-                ],
-                "correct": 1,
+                "title": "backup_banco_dados_clientes.bak",
+                "question": (
+                    "BACKUP — BANCO DE DADOS CLIENTES LEROY MERLIN (17/04/2026)\n\n"
+                    "CLIENTES: 2.400.000 registros — nome, CPF, data de nascimento, "
+                    "telefone, e-mail, endereço, histórico de compras\n\n"
+                    "PEDIDOS: 8.150.000 registros — id_cliente, data, valor, "
+                    "forma de pagamento (cartão tokenizado)\n\n"
+                    "ENTREGAS: 5.300.000 registros — id_pedido, endereço de entrega, data prevista\n\n"
+                    "Backup completo para recuperação de desastres (DRP)."
+                ),
+                "options": ["Público", "Interno", "Confidencial"],
+                "correct": 2,
                 "explanation_correct": (
-                    "Perfeito! SEMPRE desconfie de solicitações de dados pessoais por telefone. "
-                    "Desligue e confirme pelos canais oficiais da empresa."
+                    "O backup reúne grande quantidade de dados pessoais de clientes, "
+                    "incluindo CPF, endereço e histórico de compras. "
+                    "Por isso, seu acesso deve ser restrito a pessoas autorizadas."
                 ),
                 "explanation_wrong": (
-                    "Caiu no golpe! Isso é engenharia social: o atacante se passa por alguem de confiança "
-                    "para conseguir informações. Nunca passe dados pessoais em ligações não solicitadas."
+                    "Você errou. A classificação correta é Confidencial. "
+                    "O backup reúne uma grande quantidade de dados pessoais de clientes protegidos pela LGPD."
+                )
+            },
+            {
+                "id": 4,
+                "title": "manual_operacional_lojas_v3.pdf",
+                "question": (
+                    "MANUAL OPERACIONAL — LOJAS LEROY MERLIN (v3.0)\n\n"
+                    "1. Abertura de loja: acionar o sistema de controle da loja, conferir o cofre e ativar o alarme "
+                    "da recepção de mercadorias.\n"
+                    "2. Reposição de estoque: registrar saídas no sistema interno e atualizar o "
+                    "inventário ao fim de cada turno.\n"
+                    "3. Fechamento de loja: executar a rotina de recolhimento de valores e registrar "
+                    "o fechamento do caixa.\n"
+                    "4. Adesão de ofertas: etiquetas promocionais autorizadas pelo gerente antes da impressão.\n\n"
+                    "Dúvidas: coordenador de operações."
+                ),
+                "options": ["Público", "Interno", "Confidencial"],
+                "correct": 1,
+                "explanation_correct": (
+                    "Mandou bem! Esse manual descreve os procedimentos internos de abertura, "
+                    "reposição e fechamento das lojas. Ele é usado apenas pelos colaboradores, dentro da empresa."
+                ),
+                "explanation_wrong": (
+                    "Você errou. A classificação correta é Interno. "
+                    "O manual mostra como a empresa opera por dentro — rotinas de caixa, cofre e sistemas internos. "
+                    "Ele circula só entre colaboradores, mas não contém dados sensíveis a ponto de ser confidencial."
+                )
+            },
+            {
+                "id": 5,
+                "title": "ficha_tecnica_produto.pdf",
+                "question": (
+                    "FICHA TÉCNICA — TINTA ESMALTE SINTÉTICO 3,6L\n\n"
+                    "• Tipo: esmalte sintético à base de solvente\n"
+                    "• Rendimento: até 60 m² por demão\n"
+                    "• Secagem: ao toque 4h / entre demãos 6h / final 24h\n"
+                    "• Acabamento: brilhante e semibrilhante\n"
+                    "• Cores: Branco Giz, Preto Carbono, Vermelho Loja e +40 opções\n"
+                    "• Cuidados: aplicar sobre superfície limpa, seca e lixada\n"
+                    "• Validade: 24 meses · Garantia: 6 meses · Ref.: 7456123\n\n"
+                    "Disponível no site leroymerlin.com.br e nas lojas físicas."
+                ),
+                "options": ["Público", "Interno", "Confidencial"],
+                "correct": 0,
+                "explanation_correct": (
+                    "Perfeito! A ficha técnica fica exposta no e-commerce para qualquer cliente "
+                    "consultar antes de comprar. É um documento público por natureza, sem restrição de acesso."
+                ),
+                "explanation_wrong": (
+                    "Você errou. A classificação correta é Público. "
+                    "A ficha técnica está no site para todos os clientes — ela descreve o produto, "
+                    "não revela nenhum controle interno da empresa."
                 )
             }
         ]
@@ -1354,11 +1427,16 @@ def game_answer(game_id):
         )
         db.commit()
 
+    if phase_data.get('classify'):
+        explanation_title = "Classificação correta! +10 pontos" if correct else "Classificação incorreta... 0 pontos"
+    else:
+        explanation_title = "Acertou! +10 pontos" if correct else "Que pena... 0 pontos"
+
     return jsonify({
         "correct": correct,
         "explanation": subphase_data['explanation_correct'] if correct else subphase_data['explanation_wrong'],
         "points_earned": points,
-        "explanation_title": "Acertou! +10 pontos" if correct else "Que pena... 0 pontos",
+        "explanation_title": explanation_title,
         "next_phase": next_phase,
         "next_sub": next_sub,
         "is_final": is_final,
