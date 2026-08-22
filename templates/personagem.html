@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Escolher Personagem - Security Alert{% endblock %}
+{% block content %}
+<div class="char-page">
+    <div class="char-header">
+        <h1>🎮 Escolha seu Personagem</h1>
+        <p>Ele vai te acompanhar no canto da tela durante todas as fases do treinamento.</p>
+    </div>
+
+    <div class="char-grid">
+        {% for key, char in characters.items() %}
+        <form method="POST" action="{{ url_for('personagem') }}"
+              class="char-card {% if key == current %}selected{% endif %}">
+            <input type="hidden" name="character" value="{{ key }}">
+            <button type="submit" class="char-btn">
+                <span class="char-sprite-wrap">
+                    <img src="{{ url_for('static', filename=char.sprite) }}"
+                         alt="{{ char.name }}" class="char-sprite" id="sprite-{{ key }}">
+                </span>
+                <span class="char-name">{{ char.name }}</span>
+                <span class="char-tag">
+                    {% if key == current %}⭐ Selecionado{% else %}Selecionar{% endif %}
+                </span>
+            </button>
+        </form>
+        {% endfor %}
+    </div>
+
+    <div class="char-back">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline">📊 Voltar ao Dashboard</a>
+        <a href="{{ url_for('game_start') }}" class="btn btn-success">▶ Jogar com este personagem</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ===== GIRO DOS PERSONAGENS (frames de rotacao em sequencia) =====
+const SPIN_FRAMES = {{ spin_frames|tojson }};
+
+document.querySelectorAll('.char-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        document.querySelectorAll('.char-card').forEach(c => c.classList.remove('picked'));
+        btn.closest('.char-card').classList.add('picked');
+    });
+});
+
+(function () {
+    Object.keys(SPIN_FRAMES).forEach(function (key) {
+        const img = document.getElementById('sprite-' + key);
+        if (!img) return;
+        const frames = SPIN_FRAMES[key] || [];
+        // Precisa de ao menos 2 frames para girar
+        if (frames.length < 2) return;
+
+        let loaded = 0, started = false;
+        frames.forEach(function (src) {
+            const im = new Image();
+            im.onload = im.onerror = function () {
+                loaded++;
+                if (!started && loaded >= frames.length) { started = true; spin(); }
+            };
+            im.src = src;
+        });
+
+        function spin() {
+            let i = 0;
+            (function step() {
+                img.src = frames[i];
+                const delay = (i === 0) ? 1200 : 150;  // pausa maior de frente
+                i = (i + 1) % frames.length;
+                setTimeout(step, delay);
+            })();
+        }
+    });
+})();
+</script>
+{% endblock %}

@@ -47,6 +47,7 @@ def init_db():
             email TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
             show_in_ranking BOOLEAN DEFAULT 1,
+            character TEXT DEFAULT 'ana',
             reset_token TEXT,
             reset_token_expires TIMESTAMP,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -71,14 +72,20 @@ def init_db():
             phase INTEGER NOT NULL,
             subphase INTEGER NOT NULL,
             correct BOOLEAN NOT NULL,
+            timed_out BOOLEAN DEFAULT 0,
             answered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (session_id) REFERENCES game_sessions(id)
         );
     """)
-    # Migra banco existente (caso ja exista sem a coluna)
+    # Migra banco existente (caso ja exista sem as colunas)
     cols = [r["name"] for r in db.execute("PRAGMA table_info(users)").fetchall()]
     if "show_in_ranking" not in cols:
         db.execute("ALTER TABLE users ADD COLUMN show_in_ranking BOOLEAN DEFAULT 1")
+    if "character" not in cols:
+        db.execute(f"ALTER TABLE users ADD COLUMN character TEXT DEFAULT '{DEFAULT_CHARACTER}'")
+    answer_cols = [r["name"] for r in db.execute("PRAGMA table_info(phase_answers)").fetchall()]
+    if "timed_out" not in answer_cols:
+        db.execute("ALTER TABLE phase_answers ADD COLUMN timed_out BOOLEAN DEFAULT 0")
     db.commit()
 
 # ─── Decorator de Autenticacao ────────────────────────────────
@@ -92,6 +99,28 @@ def login_required(f):
     return decorated_function
 
 # ─── Dados do Jogo ───────────────────────────────────────────
+CHARACTERS = {
+    "ana":       {"name": "Ana",    "sprite": "img/personagens/ana.png"},
+    "donoleroy": {"name": "Patrão", "sprite": "img/personagens/donoleroy.png"},
+    "fabi":      {"name": "Fabi",   "sprite": "img/personagens/fabi.png"},
+    "pedro":     {"name": "Pedro",  "sprite": "img/personagens/pedro.png"},
+    "silvio":    {"name": "Silvio", "sprite": "img/personagens/silvio.png"},
+}
+DEFAULT_CHARACTER = "ana"
+
+# Ordem de giro (volta completa) para a animacao na tela de selecao
+SPIN_ORDER = ["south", "south-west", "west", "north-west",
+              "north", "north-east", "east", "south-east"]
+
+def get_spin_frames(char_key):
+    """Lista de URLs dos sprites de rotacao existentes para o personagem girar."""
+    frames = []
+    for direction in SPIN_ORDER:
+        rel = f"img/personagens/spin/{char_key}/{direction}.png"
+        if os.path.exists(os.path.join(app.static_folder, *rel.split('/'))):
+            frames.append(f"{app.static_url_path}/{rel}")
+    return frames
+
 GAME_PHASES = {
     1: {
         "title": "Fase 1: Senhas Seguras",
@@ -366,6 +395,247 @@ GAME_PHASES = {
                 )
             }
         ]
+    },
+    5: {
+        "title": "Fase 5: Uso de dispositivos pessoais",
+        "icon": "📱",
+        "color": "#b8a8d8",
+        "boss_name": "Chefe Carlos",
+        "explanation": (
+            "Mandou muito bem até aqui! Agora vamos falar sobre os dispositivos pessoais: celular, pen drive, "
+            "computador de casa... Eles facilitam o seu trabalho, mas também podem abrir portas para os hackers. "
+            "Quando você usa tecnologia própria para acessar o sistema da empresa, a segurança depende das SUAS escolhas. "
+            "E atenção: na última questão o tempo é seu inimigo. Um ataque não espera você pensar!"
+        ),
+        "subphases": [
+            {
+                "id": 1,
+                "title": "Senha anotada no post-it",
+                "question": (
+                    "Você anotou a senha do sistema da empresa em um post-it para não esquecer. Depois de decorar, "
+                    "jogou o papel no lixo da sala. Qual é o problema?"
+                ),
+                "options": [
+                    "Só seria perigoso se o papel tivesse também o nome do sistema, não apenas a senha.",
+                    "O problema é apenas ambiental, pelo desperdício de papel.",
+                    "O papel pode ser encontrado no lixo por alguém mal-intencionado, que poderá usar a senha para entrar no sistema da empresa.",
+                    "Nenhum, porque senhas em papel não servem para ataques pela internet."
+                ],
+                "correct": 2,
+                "explanation_correct": (
+                    "Excelente! ✅ Alguém pode revirar o lixo procurando exatamente esse tipo de informação — senhas, "
+                    "documentos, anotações. Basta digitar a senha no sistema para entrar."
+                ),
+                "explanation_wrong": (
+                    "❌ A senha escrita em papel funciona perfeitamente quando digitada — o criminoso não precisa invadir nada, "
+                    "é só ler e usar (D). O desperdício de papel (B) é o menor dos problemas: o risco real é de segurança da informação, "
+                    "com vazamento de dados da empresa. E a senha por si só já é suficiente para o ataque (A) — saber o nome do sistema "
+                    "é um detalhe, já que muitas vezes é óbvio qual sistema a empresa usa."
+                )
+            },
+            {
+                "id": 2,
+                "title": "Pen drive de banca de rua",
+                "question": (
+                    "Você comprou um pen drive baratinho em uma banca de rua. Precisa levar arquivos do trabalho para casa. "
+                    "O que você deve fazer?"
+                ),
+                "options": [
+                    "Formatar o pen drive antes de usar, pois isso elimina qualquer ameaça.",
+                    "Não usar esse pen drive para arquivos da empresa. Utilize apenas dispositivos fornecidos ou aprovados pela TI.",
+                    "Passar o antivírus no pen drive uma vez e depois usar sem preocupação.",
+                    "Usar o pen drive normalmente, já que ele é novo e custou pouco."
+                ],
+                "correct": 1,
+                "explanation_correct": (
+                    "Exato! ✅ Pen drives de origem duvidosa podem vir com programas escondidos que infectam o computador ao serem "
+                    "conectados. Para arquivos da empresa, use apenas dispositivos confiáveis."
+                ),
+                "explanation_wrong": (
+                    "❌ 'Novo e barato' não significa seguro — o dispositivo pode ter sido preparado para parecer normal, mas conter "
+                    "ameaças invisíveis (D). O antivírus (C) não detecta tudo, especialmente ameaças escondidas no firmware do pen drive; "
+                    "quando você conecta para escanear, o ataque pode já ter acontecido. E formatar (A) limpa os arquivos, mas não remove "
+                    "ameaças que estão no firmware do dispositivo."
+                )
+            },
+            {
+                "id": 3,
+                "title": "Celular pessoal no trabalho",
+                "question": "Você usa seu celular pessoal para acessar o e-mail da empresa. Qual atitude é a mais segura?",
+                "options": [
+                    "Instalar o e-mail da empresa e os apps pessoais (jogos, redes sociais) no mesmo espaço, sem separação.",
+                    "Usar a mesma senha do e-mail pessoal no e-mail corporativo para não esquecer.",
+                    "Manter o celular atualizado, com bloqueio de tela por biometria ou PIN forte, e usar o perfil de trabalho para separar dados pessoais dos corporativos.",
+                    "Deixar o celular sem bloqueio de tela para responder e-mails mais rápido."
+                ],
+                "correct": 2,
+                "explanation_correct": (
+                    "Perfeito! ✅ Celular atualizado fecha brechas conhecidas, bloqueio de tela protege contra acesso de estranhos e a "
+                    "separação de perfis impede que um app pessoal infectado alcance os dados da empresa."
+                ),
+                "explanation_wrong": (
+                    "❌ Sem bloqueio de tela (D), qualquer pessoa que pegue seu celular terá acesso livre aos e-mails e documentos da empresa — "
+                    "é como deixar a porta de casa aberta. Se sua conta pessoal for invadida (B), o atacante terá automaticamente a senha da "
+                    "empresa também: cada conta deve ter senha diferente. E misturar tudo no mesmo espaço (A) faz com que um app pessoal com "
+                    "problema possa acessar dados corporativos — a separação é essencial para isolar os riscos."
+                )
+            },
+            {
+                "id": 4,
+                "title": "Computador compartilhado em casa",
+                "question": (
+                    "Você trabalha em home office e seu filho usa o mesmo computador para jogar e acessar sites na internet. "
+                    "Qual é o risco para a empresa?"
+                ),
+                "options": [
+                    "Só há risco se o filho usar a conta de usuário que você usa para trabalhar.",
+                    "Nenhum, porque o computador separa totalmente as contas de usuário diferentes.",
+                    "O único problema é o computador ficar lento para trabalhar.",
+                    "O filho pode, sem querer, instalar programas ou acessar sites que infectem o computador, comprometendo os dados da empresa que estão no mesmo aparelho."
+                ],
+                "correct": 3,
+                "explanation_correct": (
+                    "Isso mesmo! ✅ Mesmo com contas separadas, o computador compartilha o mesmo sistema e a mesma rede. Um vírus instalado "
+                    "pelo filho pode se espalhar e alcançar os dados da empresa."
+                ),
+                "explanation_wrong": (
+                    "❌ A separação entre contas (B) não é total: um vírus bem feito consegue atravessar essa barreira e acessar tudo no "
+                    "computador, inclusive arquivos da empresa. Lentidão (C) é o menor dos problemas — o risco real é roubo de senhas e "
+                    "vazamento de dados corporativos sem ninguém perceber. E o risco existe independente da conta usada (A): um vírus instalado "
+                    "na conta do filho pode infectar o sistema inteiro e afetar também a sua conta de trabalho."
+                )
+            },
+            {
+                "id": 5,
+                "title": "Descarte de computador",
+                "question": (
+                    "Você vai descartar um computador pessoal que usava para acessar o sistema da empresa. O que você deve fazer antes "
+                    "de doá-lo ou vendê-lo?"
+                ),
+                "options": [
+                    "Apenas esvaziar a lixeira do sistema operacional antes de entregar o computador.",
+                    "Doar para uma instituição de caridade, pois eles não terão interesse nos dados da empresa.",
+                    "Garantir que os dados sejam totalmente destruídos — por sobrescrita, criptografia ou destruição física — para que ninguém consiga recuperá-los.",
+                    "Apagar os arquivos visíveis e formatar o computador. Pronto para doar."
+                ],
+                "correct": 2,
+                "explanation_correct": (
+                    "Correto! ✅ Apagar arquivos ou formatar não destrói os dados de verdade — eles continuam no disco até serem sobrescritos. "
+                    "Só técnicas especiais ou destruição física garantem que ninguém recupere nada."
+                ),
+                "explanation_wrong": (
+                    "❌ Formatar (D) só apaga a 'lista' de arquivos, mas os dados continuam lá — ferramentas gratuitas conseguem recuperar tudo "
+                    "facilmente. O computador doado (B) pode ser revendido, perdido ou roubado: a responsabilidade pelos dados da empresa continua "
+                    "sendo sua, não importa para quem você doou. E esvaziar a lixeira (A) só remove a referência ao arquivo — os dados continuam no "
+                    "disco e podem ser recuperados por qualquer pessoa com ferramentas simples."
+                )
+            },
+            {
+                "id": 6,
+                "title": "HD externo suspeito",
+                "question": (
+                    "Você encontrou um HD externo à venda na internet por um preço muito abaixo do mercado. Precisa de espaço extra para "
+                    "guardar arquivos do trabalho. O que você faz?"
+                ),
+                "options": [
+                    "Comprar e usar apenas se o vendedor tiver boa avaliação na plataforma.",
+                    "Comprar e usar, pois é uma boa oportunidade e HDs são só armazenamento.",
+                    "Não usar para arquivos da empresa. Dispositivos de procedência duvidosa podem conter ameaças escondidas que infectam o computador ao serem conectados.",
+                    "Comprar, passar o antivírus e depois usar sem problemas."
+                ],
+                "correct": 2,
+                "explanation_correct": (
+                    "Exato! ✅ HDs de origem duvidosa podem vir com programas escondidos que instalam vírus assim que você conecta. Para arquivos "
+                    "da empresa, só use dispositivos confiáveis."
+                ),
+                "explanation_wrong": (
+                    "❌ HD não é 'só armazenamento' (B): ele pode conter ameaças no próprio firmware, que ativam assim que é conectado ao "
+                    "computador. O antivírus (D) não detecta tudo — e quando você conecta o HD para escanear, o ataque pode já ter acontecido, "
+                    "antes mesmo do antivírus terminar. Boa avaliação do vendedor (A) também não garante segurança: o vendedor pode nem saber que "
+                    "o dispositivo está comprometido. Procedência duvidosa é risco, não importa a avaliação."
+                )
+            },
+            {
+                "id": 7,
+                "title": "Jogo de site não oficial",
+                "question": (
+                    "Você baixou um jogo de um site não oficial no mesmo computador que usa para acessar o sistema da empresa. Qual é o problema?"
+                ),
+                "options": [
+                    "O problema é só que o jogo pode deixar o computador lento.",
+                    "Jogos de sites não oficiais podem vir com vírus escondidos que infectam o computador e podem roubar senhas e dados da empresa acessados no mesmo aparelho.",
+                    "Nenhum, desde que o jogo seja gratuito.",
+                    "O único problema é que a empresa pode multar você por usar o computador para coisas pessoais."
+                ],
+                "correct": 1,
+                "explanation_correct": (
+                    "Correto! ✅ Programas de sites não oficiais costumam trazer vírus escondidos que podem capturar senhas, roubar arquivos e usar "
+                    "o computador como ponte para atacar a empresa."
+                ),
+                "explanation_wrong": (
+                    "❌ Ser gratuito (C) não significa seguro — muitos vírus são distribuídos justamente em programas 'gratuitos' para atrair "
+                    "usuários desavisados. O problema vai muito além de punição administrativa (D): há um risco técnico real de vazamento de dados "
+                    "e comprometimento dos sistemas da empresa. E lentidão (A) é o menor dos problemas — o perigo é invisível e silencioso: o vírus "
+                    "pode agir por meses sem que você perceba nada de errado."
+                )
+            },
+            {
+                "id": 8,
+                "title": "Protegendo a empresa",
+                "question": "Qual destas atitudes ajuda a proteger a empresa quando você usa seu equipamento pessoal para trabalhar?",
+                "options": [
+                    "Desativar o firewall do computador quando o sistema da empresa estiver lento.",
+                    "Usar a mesma senha para tudo, desde que seja uma senha muito forte.",
+                    "Ativar a autenticação em duas etapas (MFA) nos sistemas da empresa e manter o computador com antivírus e sistema operacional atualizados.",
+                    "Deixar o antivírus desligado para o computador ficar mais rápido."
+                ],
+                "correct": 2,
+                "explanation_correct": (
+                    "Perfeito! ✅ A autenticação em duas etapas exige um segundo passo para entrar (como um código no celular). Mesmo que alguém "
+                    "descubra sua senha, não consegue acessar sem o segundo fator. Antivírus e atualizações fecham brechas conhecidas."
+                ),
+                "explanation_wrong": (
+                    "❌ Antivírus desligado (D) deixa o computador desprotegido — a perda de performance é mínima perto do risco de comprometer "
+                    "dados da empresa. Mesmo a senha mais forte, se reutilizada em vários lugares (B), vira ponto único de falha: se uma conta for "
+                    "invadida, todas as outras com a mesma senha também estarão comprometidas. E o firewall (A) bloqueia conexões perigosas de fora "
+                    "para dentro — desligá-lo deixa o computador exposto a invasões e a vírus se comunicando com criminosos pela internet."
+                )
+            },
+            {
+                "id": 9,
+                "title": "Pen drive infectado — ataque em andamento!",
+                "question": (
+                    "🚨 AMEAÇA ATIVA! Você conectou um pen drive infectado ao computador da empresa e percebeu que ele pode estar comprometido. "
+                    "O ataque já começou — decida rápido, antes que o hacker complete a invasão!"
+                ),
+                "options": [
+                    "Continuar usando o computador normalmente e avisar a TI apenas se aparecer algum problema.",
+                    "Formatar o pen drive e conectá-lo novamente para verificar se o problema foi resolvido.",
+                    "Desconectar o pen drive, não abrir nem executar arquivos dele e comunicar imediatamente a TI ou o responsável pela segurança da empresa.",
+                    "Passar o antivírus no pen drive e, se não encontrar nada, continuar usando normalmente."
+                ],
+                "correct": 2,
+                "timer_seconds": 30,
+                "hacked_title": "Você foi hackeado(a)",
+                "hacked_text": (
+                    "💀 O tempo acabou e o malware se espalhou pelo computador antes de você reagir. Todos os pontos desta fase foram perdidos. "
+                    "No mundo real, a atitude correta era: desconectar o pen drive, não abrir nem executar arquivos dele e comunicar IMEDIATAMENTE "
+                    "a TI ou o responsável pela segurança — isso permite analisar a máquina e evita que a infecção se espalhe."
+                ),
+                "saved_title": "Você salvou a empresa.",
+                "explanation_correct": (
+                    "🌱 Você salvou a empresa! Ao desconectar o pen drive, não abrir nenhum arquivo dele e comunicar imediatamente a TI ou o "
+                    "responsável pela segurança, você interrompeu o ataque na hora certa. Isso permite que o computador seja analisado e evita que "
+                    "uma possível infecção se espalhe pela rede."
+                ),
+                "explanation_wrong": (
+                    "❌ A atitude correta era desconectar o pen drive, não abrir nem executar arquivos dele e comunicar imediatamente a TI ou o "
+                    "responsável pela segurança (C). Continuar usando o computador (A) permite que o malware se espalhe ou roube informações antes "
+                    "que alguém perceba. Formatar e reconectar o pen drive (B) não garante que a ameaça foi eliminada — e ainda coloca o computador "
+                    "em risco outra vez. E o antivírus (D) pode não detectar todas as ameaças: a análise deve ficar com a equipe responsável pela segurança."
+                )
+            }
+        ]
     }
 }
 
@@ -558,21 +828,51 @@ def toggle_ranking():
     db.commit()
     return redirect(url_for('dashboard'))
 
+# ─── Selecao de Personagem ───────────────────────────────────
+def get_user_character():
+    """Retorna os dados do personagem escolhido pelo usuario logado."""
+    db = get_db()
+    row = db.execute(
+        "SELECT character FROM users WHERE id = ?",
+        (session['user_id'],)
+    ).fetchone()
+    key = row['character'] if row and row['character'] in CHARACTERS else DEFAULT_CHARACTER
+    return key, CHARACTERS[key]
+
+@app.route('/personagem', methods=['GET', 'POST'])
+@login_required
+def personagem():
+    db = get_db()
+    if request.method == 'POST':
+        chosen = request.form.get('character', '')
+        if chosen not in CHARACTERS:
+            flash('Personagem invalido.', 'danger')
+            return redirect(url_for('personagem'))
+        db.execute(
+            "UPDATE users SET character = ? WHERE id = ?",
+            (chosen, session['user_id'])
+        )
+        db.commit()
+        flash(f'{CHARACTERS[chosen]["name"]} agora e o seu personagem! 🎮', 'success')
+        return redirect(url_for('personagem'))
+    current, _ = get_user_character()
+    return render_template('personagem.html',
+                         characters=CHARACTERS,
+                         current=current,
+                         spin_frames={k: get_spin_frames(k) for k in CHARACTERS})
+
 @app.route('/game/start')
 @login_required
 def game_start():
     db = get_db()
-    # Criar uma nova sessao de jogo
+    # Pontuacao maxima dinamica: 10 pontos por questao
+    total_questions = sum(len(p['subphases']) for p in GAME_PHASES.values())
     cursor = db.execute(
         "INSERT INTO game_sessions (user_id, max_score) VALUES (?, ?)",
-        (session['user_id'], 100)  # 10 questoes x 10 pontos
+        (session['user_id'], total_questions * 10)
     )
     db.commit()
     game_id = cursor.lastrowid
-
-    # Corrigir max_score
-    db.execute("UPDATE game_sessions SET max_score = 100 WHERE id = ?", (game_id,))
-    db.commit()
 
     return redirect(url_for('game_play', game_id=game_id, phase=1, sub=1))
 
@@ -627,6 +927,9 @@ def game_play(game_id, phase, sub):
         (session['user_id'],)
     ).fetchone()['email']
 
+    # Personagem escolhido pelo jogador (exibido no canto da fase)
+    char_key, char_data = get_user_character()
+
     return render_template('game.html',
                          game=game,
                          phase=phase,
@@ -635,6 +938,7 @@ def game_play(game_id, phase, sub):
                          subphase_data=subphase_data,
                          already_answered=already_answered,
                          user_email=user_email,
+                         player_char=char_data,
                          total_phases=len(GAME_PHASES),
                          total_subs_in_phase=len(phase_data['subphases']))
 
@@ -1057,6 +1361,82 @@ def game_answer(game_id):
         "explanation_title": "Acertou! +10 pontos" if correct else "Que pena... 0 pontos",
         "next_phase": next_phase,
         "next_sub": next_sub,
+        "is_final": is_final,
+        "next_url": url_for('game_feedback', game_id=game_id) if is_final
+                   else url_for('game_play', game_id=game_id, phase=next_phase, sub=next_sub)
+    })
+
+@app.route('/game/<int:game_id>/hacked', methods=['POST'])
+@login_required
+def game_hacked(game_id):
+    """Tempo esgotado em questao com timer: o jogador foi hackeado.
+    Os pontos da fase inteira sao descartados (zerados)."""
+    db = get_db()
+    game = db.execute(
+        "SELECT * FROM game_sessions WHERE id = ? AND user_id = ? AND completed = 0",
+        (game_id, session['user_id'])
+    ).fetchone()
+
+    if not game:
+        return jsonify({"error": "Sessao invalida"}), 400
+
+    phase = int(request.form.get('phase', 0))
+    sub = int(request.form.get('sub', 0))
+
+    if phase not in GAME_PHASES:
+        return jsonify({"error": "Fase invalida"}), 400
+
+    phase_data = GAME_PHASES[phase]
+    if sub > len(phase_data['subphases']):
+        return jsonify({"error": "Sub-fase invalida"}), 400
+
+    # Zera as respostas corretas dessa fase e desconta os pontos ganhos nela
+    lost = 0
+    row = db.execute(
+        "SELECT COUNT(*) AS n FROM phase_answers WHERE session_id = ? AND phase = ? AND correct = 1",
+        (game_id, phase)
+    ).fetchone()
+    lost = row['n'] * 10
+    if lost:
+        db.execute(
+            "UPDATE phase_answers SET correct = 0 WHERE session_id = ? AND phase = ? AND correct = 1",
+            (game_id, phase)
+        )
+        db.execute(
+            "UPDATE game_sessions SET score = MAX(0, score - ?) WHERE id = ?",
+            (lost, game_id)
+        )
+
+    # Registra a questao atual como nao respondida a tempo (timeout)
+    existing = db.execute(
+        "SELECT id FROM phase_answers WHERE session_id = ? AND phase = ? AND subphase = ?",
+        (game_id, phase, sub)
+    ).fetchone()
+    if not existing:
+        db.execute(
+            "INSERT INTO phase_answers (session_id, phase, subphase, correct, timed_out) VALUES (?, ?, ?, 0, 1)",
+            (game_id, phase, sub)
+        )
+
+    # Se era a ultima questao do jogo, finaliza a sessao
+    next_sub = sub + 1
+    next_phase = phase
+    if next_sub > len(phase_data['subphases']):
+        next_phase = phase + 1
+        next_sub = 1
+
+    is_final = (next_phase not in GAME_PHASES)
+    if is_final:
+        db.execute(
+            "UPDATE game_sessions SET completed = 1, finished_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (game_id,)
+        )
+    db.commit()
+
+    return jsonify({
+        "ok": True,
+        "hacked": True,
+        "points_lost": lost,
         "is_final": is_final,
         "next_url": url_for('game_feedback', game_id=game_id) if is_final
                    else url_for('game_play', game_id=game_id, phase=next_phase, sub=next_sub)

@@ -1,6 +1,13 @@
 {% extends "base.html" %}
 {% block title %}{{ phase_data.title }} - Security Alert{% endblock %}
 {% block content %}
+{# Personagem escolhido pelo jogador (canto da tela) #}
+<div class="player-avatar" title="{{ player_char.name }}">
+    <img src="{{ url_for('static', filename=player_char.sprite) }}"
+         alt="{{ player_char.name }}" class="player-avatar-sprite">
+    <span class="player-avatar-name">{{ player_char.name }}</span>
+</div>
+
 <div class="game-container">
     {# Barra de progresso #}
     <div class="game-progress">
@@ -10,7 +17,7 @@
                 {% if GAME_PHASES is not defined %}
                     {# Variavel injetada #}
                 {% endif %}
-                {% if p == 1 %}🔑{% elif p == 2 %}⚠️{% elif p == 3 %}🎣{% else %}📞{% endif %}
+                {% if p == 1 %}🔑{% elif p == 2 %}⚠️{% elif p == 3 %}🎣{% elif p == 5 %}📱{% else %}📞{% endif %}
             </span>
             <span class="progress-label">Fase {{ p }}</span>
         </div>
@@ -74,6 +81,13 @@
 
             {% if already_answered %}
             {# Ja respondeu - mostrar resultado e botao de continuar #}
+            {% if already_answered.timed_out %}
+            <div class="answer-result hacked-result">
+                <span class="result-emoji">💀</span>
+                <strong>{{ subphase_data.hacked_title or 'Você foi hackeado(a)' }}</strong>
+                <p>{{ subphase_data.hacked_text }}</p>
+            </div>
+            {% else %}
             <div class="answer-result {% if already_answered.correct %}correct{% else %}wrong{% endif %}">
                 <span class="result-emoji">{% if already_answered.correct %}✅{% else %}❌{% endif %}</span>
                 <strong>{% if already_answered.correct %}Voce acertou!{% else %}Voce errou...{% endif %}</strong>
@@ -83,6 +97,7 @@
                 <p>{{ subphase_data.explanation_wrong }}</p>
                 {% endif %}
             </div>
+            {% endif %}
             {% set next_sub = sub + 1 %}
             {% set next_phase = phase %}
             {% if next_sub > total_subs_in_phase %}
@@ -104,7 +119,7 @@
             {% endif %}
 
             {% else %}
-                        {# ═══════ FASE 1: SUB 1=builder / SUB 2=teclado virtual / SUB 3=drag and drop ═══════ #}
+            {# ═══════ FASE 1: SUB 1=builder / SUB 2=teclado virtual / SUB 3=drag and drop ═══════ #}
             {% if subphase_data.mode == 'password_builder' %}
             {# ═══════ FASE 1 SUB 1: CONSTRUTOR DE SENHA COM DADOS (2 etapas) ═══════ #}
             <div id="phase1-builder" class="phase1-container phase1-builder">
@@ -281,8 +296,18 @@
             <script>
                 window.PHASE1_SUBMIT_URL = "{{ url_for('phase1_submit', game_id=game.id) }}";
             </script>
-{% else %}
-            {# Pergunta ativa (Fases 3, 4) #}
+
+            {% else %}
+            {# Pergunta ativa (Fases 3, 4, 5) #}
+            {% if subphase_data.timer_seconds %}
+            {# Questao com tempo limite: ataque em andamento (Fase 5, Questao 9) #}
+            <div id="hack-overlay" aria-hidden="true"></div>
+            <div class="hack-timer" id="hack-timer">
+                <span class="hack-timer-icon">🚨</span>
+                <span class="hack-timer-label">AMEAÇA ATIVA DETECTADA! O malware está se espalhando... decida antes que o ataque se complete!</span>
+                <span class="hack-timer-count" id="hack-timer-count">{{ subphase_data.timer_seconds }}s</span>
+            </div>
+            {% endif %}
             <p class="subphase-question">{{ subphase_data.question }}</p>
 
             {% if subphase_data.mode == 'sms_sim' %}
@@ -496,7 +521,133 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// ===== QUESTAO COM TEMPO LIMITE (Fase 5, Questao 9) =====
+const TIMED_CFG = {
+    seconds: {{ subphase_data.timer_seconds or 0 }},
+    hackedTitle: {{ (subphase_data.hacked_title or 'Você foi hackeado(a)')|tojson }},
+    hackedText: {{ (subphase_data.hacked_text or '')|tojson }},
+    savedTitle: {{ (subphase_data.saved_title or 'Você salvou a empresa.')|tojson }}
+};
+
+let hackTimerId = null;
+let hackAnswered = false;
+let hackDeadline = null;
+
+function startHackTick() {
+    if (hackTimerId) clearInterval(hackTimerId);
+    const countEl = document.getElementById('hack-timer-count');
+    const overlay = document.getElementById('hack-overlay');
+    const box = document.getElementById('hack-timer');
+
+    hackTimerId = setInterval(function () {
+        if (!overlay) { stopHackTimer(false); return; }
+        const remainingMs = Math.max(0, hackDeadline - Date.now());
+        const progress = Math.min(1, 1 - remainingMs / (TIMED_CFG.seconds * 1000));
+
+        // A tela fica vermelha aos poucos conforme o tempo passa
+        overlay.style.opacity = (progress * 0.85).toFixed(3);
+        if (progress > 0.12) document.body.classList.add('under-attack');
+        if (box) box.classList.toggle('danger', remainingMs <= 10000);
+        if (countEl) countEl.textContent = Math.ceil(remainingMs / 1000) + 's';
+
+        if (remainingMs <= 0) {
+            stopHackTimer(false);
+            triggerHacked();
+        }
+    }, 100);
+}
+
+function startHackTimer() {
+    const box = document.getElementById('hack-timer');
+    if (!box || TIMED_CFG.seconds <= 0) return;
+    hackDeadline = Date.now() + TIMED_CFG.seconds * 1000;
+    startHackTick();
+}
+
+function stopHackTimer() {
+    if (hackTimerId) { clearInterval(hackTimerId); hackTimerId = null; }
+}
+
+function hideHackTimer() {
+    stopHackTimer();
+    const box = document.getElementById('hack-timer');
+    if (box) box.style.display = 'none';
+}
+
+function fadeOutOverlay() {
+    const overlay = document.getElementById('hack-overlay');
+    if (!overlay) return;
+    overlay.style.transition = 'opacity .6s ease';
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.remove(), 700);
+    document.body.classList.remove('under-attack');
+}
+
+function lockOptions() {
+    document.querySelectorAll('.option-btn').forEach(b => {
+        b.disabled = true;
+        b.style.pointerEvents = 'none';
+    });
+}
+
+function showFeedbackBox(className, emojiText, titleText, bodyText, nextUrl, finalFlag) {
+    const feedback = document.getElementById('answer-feedback');
+    document.getElementById('feedback-emoji').textContent = emojiText;
+    document.getElementById('feedback-title').textContent = titleText;
+    document.getElementById('feedback-text').textContent = bodyText;
+
+    const next = document.getElementById('feedback-next');
+    next.href = nextUrl;
+    next.classList.remove('btn-success');
+    next.textContent = 'Proxima Questao →';
+    if (finalFlag) {
+        next.textContent = '🏆 Ver Resultado Final!';
+        next.classList.add('btn-success');
+    }
+
+    feedback.className = 'answer-result ' + className;
+    feedback.style.display = 'block';
+
+    const list = document.getElementById('options-list');
+    if (list) list.style.display = 'none';
+
+    feedback.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// Tempo esgotado: o jogador foi hackeado e perde os pontos da fase
+function triggerHacked() {
+    if (hackAnswered) return;
+    hackAnswered = true;
+    lockOptions();
+    hideHackTimer();
+
+    const formData = new FormData();
+    formData.append('phase', '{{ phase }}');
+    formData.append('sub', '{{ sub }}');
+
+    fetch("{{ url_for('game_hacked', game_id=game.id) }}", { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+            // Mantem a tela vermelha pulsando (ambiente comprometido)
+            const overlay = document.getElementById('hack-overlay');
+            if (overlay) overlay.classList.add('hacked');
+            document.body.classList.add('hacked-state');
+            showFeedbackBox('wrong hacked-result', '💀', TIMED_CFG.hackedTitle,
+                data.points_lost > 0
+                    ? TIMED_CFG.hackedText + ' (-' + data.points_lost + ' pontos desta fase perdidos!)'
+                    : TIMED_CFG.hackedText,
+                data.next_url, data.is_final);
+        })
+        .catch(err => console.error('Erro:', err));
+}
+
+startHackTimer();
+
 function submitAnswer(answerIndex) {
+    if (hackAnswered) return;
+    hackAnswered = true;   // trava duplo clique e corrida com o timer
+    stopHackTimer();
+
     // Suporta modo normal (options) e modo de comparacao de e-mails (Gmail)
     const emailMode = !!document.querySelector('.gmail-message');
     const items = emailMode
@@ -533,37 +684,33 @@ function submitAnswer(answerIndex) {
     })
     .then(r => r.json())
     .then(data => {
-        const feedback = document.getElementById('answer-feedback');
-        const emoji = document.getElementById('feedback-emoji');
-        const title = document.getElementById('feedback-title');
-        const text = document.getElementById('feedback-text');
-        const next = document.getElementById('feedback-next');
+        const isTimedQuestion = TIMED_CFG.seconds > 0;
 
-        feedback.style.display = 'block';
-        feedback.className = 'answer-result ' + (data.correct ? 'correct' : 'wrong');
-        emoji.textContent = data.correct ? '✅' : '❌';
-        title.textContent = data.explanation_title;
-        text.textContent = data.explanation;
-        next.href = data.next_url;
-
-        if (data.is_final) {
-            next.textContent = '🏆 Ver Resultado Final!';
-            next.classList.add('btn-success');
+        if (isTimedQuestion && data.correct) {
+            // Respondeu certo a tempo: mensagem verde esperancosa
+            fadeOutOverlay();
+            showFeedbackBox('saved', '🌱', TIMED_CFG.savedTitle,
+                data.explanation, data.next_url, data.is_final);
+        } else {
+            if (isTimedQuestion) fadeOutOverlay();
+            showFeedbackBox(data.correct ? 'correct' : 'wrong',
+                data.correct ? '✅' : '❌',
+                data.explanation_title,
+                data.explanation, data.next_url, data.is_final);
         }
-
-        // Esconder opcoes / e-mails
-        document.getElementById('options-list').style.display = 'none';
-
-        // Scroll suave
-        feedback.scrollIntoView({ behavior: 'smooth', block: 'center' });
     })
     .catch(err => {
         console.error('Erro:', err);
+        // Falhou a requisicao: devolve os botoes e retoma o tempo restante
+        hackAnswered = false;
         buttons.forEach(b => {
             b.disabled = false;
             b.style.pointerEvents = 'auto';
         });
         items.forEach(el => el.style.pointerEvents = 'auto');
+        if (TIMED_CFG.seconds > 0 && hackDeadline && hackDeadline > Date.now()) {
+            startHackTick();
+        }
     });
 }
 

@@ -21,6 +21,7 @@
             <div class="nav-links">
                 <span class="nav-user">👤 {{ session.username }}</span>
                 <a href="{{ url_for('dashboard') }}" class="nav-link">Dashboard</a>
+                <a href="{{ url_for('personagem') }}" class="nav-link">🎮 Personagem</a>
                 <a href="{{ url_for('game_start') }}" class="btn btn-sm btn-success">🎮 Novo Jogo</a>
                 <a href="{{ url_for('logout') }}" class="nav-link">Sair</a>
             </div>
