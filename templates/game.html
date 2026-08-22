@@ -50,7 +50,16 @@
                     <span class="boss-speech-text" data-text="{{ phase_data.explanation }}"></span>
                 </div>
 
+                {# ═══════ FASE 1: CONSTRUTOR DE SENHA (primeira subfase) ═══════ #}
+                {% if phase == 1 %}
+                <div class="phase1-inline">
+                    <a href="#phase1-builder" class="btn btn-primary btn-lg" id="phase1-start-btn">
+                        🔐 Começar Fase — Construtor de Senha!
+                    </a>
+                </div>
+                {% else %}
                 <a href="#subphase-{{ sub }}" class="btn btn-primary btn-lg">Comecar Fase!</a>
+                {% endif %}
             </div>
         </div>
         {% endif %}
@@ -95,7 +104,185 @@
             {% endif %}
 
             {% else %}
-            {# Pergunta ativa #}
+                        {# ═══════ FASE 1: SUB 1=builder / SUB 2=teclado virtual / SUB 3=drag and drop ═══════ #}
+            {% if subphase_data.mode == 'password_builder' %}
+            {# ═══════ FASE 1 SUB 1: CONSTRUTOR DE SENHA COM DADOS (2 etapas) ═══════ #}
+            <div id="phase1-builder" class="phase1-container phase1-builder">
+                <div class="phase1-builder-header">
+                    <span class="phase1-builder-badge">🔑</span>
+                    <div>
+                        <h2 class="phase1-builder-title">Construtor de Senha Forte</h2>
+                        <p class="phase1-builder-subtitle">Descubra como seus dados viram senhas fracas</p>
+                    </div>
+                </div>
+
+                <div id="phase1-builder-step1" class="phase1-builder-step">
+                    <h3 class="phase1-step-title">Etapa 1: Dados que parecem inofensivos</h3>
+                    <p class="phase1-step-hint">Digite informações fictícias. Nenhum dado sai do seu navegador.</p>
+
+                    <form id="phase1-builder-form" class="phase1-builder-form">
+                        <label class="phase1-field">
+                            <span>Nome do seu pet</span>
+                            <input type="text" name="pet" placeholder="ex: Thor" maxlength="40" autocomplete="off">
+                        </label>
+                        <label class="phase1-field">
+                            <span>Data de nascimento</span>
+                            <input type="text" name="dob" placeholder="ex: 15051998" maxlength="10" autocomplete="off">
+                        </label>
+                        <label class="phase1-field">
+                            <span>Seu time do coração</span>
+                            <input type="text" name="team" placeholder="ex: Palmeiras" maxlength="40" autocomplete="off">
+                        </label>
+                        <label class="phase1-field">
+                            <span>Cidade onde nasceu</span>
+                            <input type="text" name="city" placeholder="ex: Curitiba" maxlength="40" autocomplete="off">
+                        </label>
+                        <label class="phase1-field">
+                            <span>Nome da sua mãe</span>
+                            <input type="text" name="mother" placeholder="ex: Maria" maxlength="40" autocomplete="off">
+                        </label>
+
+                        <button type="submit" class="btn btn-primary btn-block phase1-builder-cta">
+                            Ver como um hacker usaria isso →
+                        </button>
+                    </form>
+                </div>
+
+                <div id="phase1-builder-step2" class="phase1-builder-step phase1-hidden">
+                    <h3 class="phase1-step-title">Etapa 2: O que um hacker tentaria</h3>
+                    <p class="phase1-step-hint">Com base nos seus dados, essas são senhas fracas que alguém poderia adivinhar.</p>
+
+                    <div class="phase1-weak-list">
+                        <div class="phase1-weak-list-header">
+                            <span class="phase1-weak-icon">⚠️</span>
+                            <span>Tentativas de senha detectadas</span>
+                        </div>
+                        <ul id="phase1-weak-passwords" class="phase1-weak-items"></ul>
+                    </div>
+
+                    <div class="phase1-danger-box">
+                        <strong>Por que isso é perigoso?</strong>
+                        Dados pessoais vazam em redes sociais, vazamentos de dados e conversas cotidianas.
+                        Quem te conhece um pouco consegue montar essas senhas em minutos.
+                    </div>
+
+                    <div class="phase1-builder-actions">
+                        <button type="button" id="phase1-builder-back" class="btn btn-danger">← Voltar</button>
+                        <button type="button" id="phase1-builder-continue" class="btn btn-primary">
+                            Continuar →
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                window.PHASE1_SUB3_SAVE_DATA_URL = "{{ url_for('phase1_sub3_save_data', game_id=game.id) }}";
+                window.PHASE1_SUB3_SUBMIT_URL = "{{ url_for('phase1_sub3_submit', game_id=game.id) }}";
+            </script>
+
+            {% elif subphase_data.mode == 'password_dnd' %}
+            {# ═══════ FASE 1 SUB 3: CLASSIFICAR SENHAS (drag and drop) ═══════ #}
+            <div id="phase2-game" class="phase2-container">
+                <h2 class="phase2-title">🔑 Classifique as Senhas</h2>
+                <p class="phase2-instructions">
+                    Arraste cada cartão para a coluna correta: <strong>🔓 Senha Fácil</strong>
+                    (fraca, fácil de adivinhar) ou <strong>🔒 Senha Difícil</strong>
+                    (forte, bem protegida).
+                </p>
+
+                <div class="phase2-stats">
+                    <span class="phase2-stat">
+                        <span class="phase2-stat-label">Acertos</span>
+                        <span id="phase2-correct" class="phase2-stat-value">0/8</span>
+                    </span>
+                    <span class="phase2-stat">
+                        <span class="phase2-stat-label">Pontos</span>
+                        <span id="phase2-score" class="phase2-stat-value">0</span>
+                    </span>
+                </div>
+
+                <div id="phase2-pool" class="phase2-pool" aria-label="Cartões disponíveis">
+                    {# cards sao gerados via JS pra ficar randomizado #}
+                </div>
+
+                <div class="phase2-columns">
+                    <div class="phase2-column phase2-col-easy" data-target="easy">
+                        <div class="phase2-column-header">
+                            <span class="phase2-column-icon">🔓</span>
+                            <span class="phase2-column-title">Senha Fácil</span>
+                            <span class="phase2-column-hint">curtas, óbvias ou pessoais</span>
+                        </div>
+                        <div class="phase2-dropzone" data-zone="easy"></div>
+                    </div>
+                    <div class="phase2-column phase2-col-hard" data-target="hard">
+                        <div class="phase2-column-header">
+                            <span class="phase2-column-icon">🔒</span>
+                            <span class="phase2-column-title">Senha Difícil</span>
+                            <span class="phase2-column-hint">longas, com símbolos e variadas</span>
+                        </div>
+                        <div class="phase2-dropzone" data-zone="hard"></div>
+                    </div>
+                </div>
+
+                <div id="phase2-final" class="phase2-gameover hidden">
+                    <h3>🎮 Pronto!</h3>
+                    <p id="phase2-final-score"></p>
+                    <a href="#" id="phase2-next" class="btn btn-success">Próxima Fase →</a>
+                </div>
+
+                <script>
+                    window.PHASE2_SUBMIT_URL = "{{ url_for('phase1_sub2_submit', game_id=game.id) }}";
+                </script>
+            </div>
+
+            {% elif phase == 1 and sub == 2 %}
+            {# ═══════ FASE 1 SUB 2: TECLADO VIRTUAL ═══════ #}
+            <div id="phase1-keyboard" class="phase1-container">
+                <h2 class="phase1-title">🔒 Cofre Digital — Crie sua senha</h2>
+
+                <div class="phase1-display">
+                    <span id="password-display" class="phase1-password">••••••••</span>
+                    <button type="button" id="toggle-visibility" class="phase1-eye" title="Mostrar/Ocultar">👁️</button>
+                </div>
+
+                <div class="phase1-strength">
+                    <div class="strength-track">
+                        <div id="strength-fill" class="strength-fill" style="width: 0%; background: #94a3b8;"></div>
+                    </div>
+                    <div class="strength-info">
+                        <span id="strength-text">Digite uma senha...</span>
+                        <span id="strength-percent">0%</span>
+                    </div>
+                </div>
+
+                <div class="phase1-crack">
+                    <span>⏱️ Tempo pra quebrar:</span>
+                    <strong id="crack-time">—</strong>
+                </div>
+
+                <ul id="phase1-criteria" class="phase1-criteria"></ul>
+
+                <div class="phase1-keyboard" id="phase1-keyboard-area"></div>
+
+                <div class="phase1-actions">
+                    <button type="button" id="phase1-clear" class="btn btn-danger">🗑 Apagar tudo</button>
+                    <button type="button" id="phase1-submit" class="btn btn-primary" disabled>
+                        Crie uma senha forte para continuar
+                    </button>
+                </div>
+
+                <div id="phase1-result" class="phase1-result hidden">
+                    <h2 id="phase1-result-title"></h2>
+                    <p id="phase1-result-text"></p>
+                    <a id="phase1-next-btn" href="#" class="btn btn-primary">Próxima Fase →</a>
+                </div>
+            </div>
+
+            <script>
+                window.PHASE1_SUBMIT_URL = "{{ url_for('phase1_submit', game_id=game.id) }}";
+            </script>
+{% else %}
+            {# Pergunta ativa (Fases 3, 4) #}
             <p class="subphase-question">{{ subphase_data.question }}</p>
 
             {% if subphase_data.mode == 'sms_sim' %}
@@ -273,7 +460,8 @@
                 <p id="feedback-text"></p>
                 <a id="feedback-next" href="#" class="btn btn-primary btn-block mt-4">Proxima Questao →</a>
             </div>
-            {% endif %}
+            {% endif %}{# fim if phase == 1 #}
+            {% endif %}{# fim if already_answered #}
         </div>
     </div>
 </div>
@@ -322,7 +510,7 @@ function submitAnswer(answerIndex) {
     buttons.forEach(b => b.style.pointerEvents = 'none');
     items.forEach(el => el.style.pointerEvents = 'none');
 
-    const correctIndex = {{ subphase_data.correct }};
+    const correctIndex = {{ subphase_data.correct|default('undefined', true) }};
 
     // Marcar visualmente
     items.forEach((el, i) => {
@@ -388,5 +576,533 @@ function toggleEmail(index) {
     msg.style.display = hidden ? 'block' : 'none';
     if (row) row.classList.toggle('open', hidden);
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ═══════ FASE 1 — TECLADO VIRTUAL (in-page) ═══════
+// ═══════════════════════════════════════════════════════════════════════════
+
+(function initPhase1() {
+    // A Fase 1 pode renderizar o teclado virtual (sub 1),
+    // o construtor de senha (sub 3) ou ambos na tela de introducao.
+    const keyboardArea = document.getElementById('phase1-keyboard-area');
+    const builder = document.getElementById('phase1-builder');
+
+    // So sai se NENHUM dos dois mini-jogos da Fase 1 estiver presente
+    if (!keyboardArea && !builder) return;
+
+    const SUBMIT_URL = window.PHASE1_SUBMIT_URL;
+    const SAVE_DATA_URL = window.PHASE1_SUB3_SAVE_DATA_URL;
+    const SUB3_SUBMIT_URL = window.PHASE1_SUB3_SUBMIT_URL;
+
+    const requirements = [
+        { id: 'length',  label: '✅ Pelo menos 10 caracteres',     test: (p) => p.length >= 10 },
+        { id: 'number',  label: '✅ Pelo menos 1 número',          test: (p) => /\d/.test(p) },
+        { id: 'lower',   label: '✅ Pelo menos 1 letra minúscula',  test: (p) => /[a-z]/.test(p) },
+        { id: 'upper',   label: '✅ Pelo menos 1 letra maiúscula', test: (p) => /[A-Z]/.test(p) },
+        { id: 'special', label: '✅ Pelo menos 1 caractere especial', test: (p) => /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(p) }
+    ];
+
+    // Layout do teclado (todas as teclas com LETRAS e SÍMBOLOS visíveis)
+    const keyboardRows = [
+        ['1','2','3','4','5','6','7','8','9','0'],
+        ['q','w','e','r','t','y','u','i','o','p'],
+        ['a','s','d','f','g','h','j','k','l'],
+        ['z','x','c','v','b','n','m'],
+        ['!','@','#','$','%','&','*','?','_','-'],
+        ['Shift','Espaço','Backspace','Enter']
+    ];
+
+    let password = '';
+    let shiftActive = false;
+    let shown = false;
+
+    const $ = (s) => document.querySelector(s);
+
+    // Renderiza o teclado com letras/símbolos VISÍVEIS
+    function renderKeyboard() {
+        keyboardArea.innerHTML = keyboardRows.map((row, ri) =>
+            `<div class="phase1-row">` +
+            row.map(k => {
+                let label = k, value = k, cls = 'phase1-key';
+                if (k === 'Shift') {
+                    cls += shiftActive ? ' pressed active-shift wide' : ' wide';
+                    label = '⇧ Shift';
+                    value = 'Shift';
+                }
+                if (k === 'Espaço') { cls += ' extra-wide'; label = 'espaço'; value = ' '; }
+                if (k === 'Backspace') { cls += ' wide'; label = '⌫'; value = 'Backspace'; }
+                if (k === 'Enter') { cls += ' wide'; label = '⏎ Enter'; value = 'Enter'; }
+                const isLetter = k.length === 1 && /[a-z]/.test(k);
+                return `<button type="button" class="${cls}${isLetter ? ' phase1-letter' : ''}" data-key="${value}" data-base="${k}">${isLetter ? k.toUpperCase() : label}</button>`;
+            }).join('') +
+            `</div>`
+        ).join('');
+    }
+
+    function updateShift() {
+        const shiftBtn = keyboardArea.querySelector('.phase1-key[data-key="Shift"]');
+        if (shiftBtn) {
+            shiftBtn.classList.toggle('pressed', shiftActive);
+            shiftBtn.classList.toggle('active-shift', shiftActive);
+        }
+        keyboardArea.querySelectorAll('.phase1-letter').forEach(el => {
+            const base = el.dataset.base;
+            el.textContent = shiftActive ? base.toUpperCase() : base;
+        });
+    }
+
+    function getStrength(pwd) {
+        const passed = requirements.filter(r => r.test(pwd)).length;
+        if (passed <= 2) return 'weak';
+        if (passed <= 4) return 'medium';
+        return 'strong';
+    }
+
+    function updateUI() {
+        // Display da senha
+        const display = $('#password-display');
+        display.textContent = shown ? password : '•'.repeat(password.length);
+
+        // Critérios
+        const list = $('#phase1-criteria');
+        list.innerHTML = requirements.map(r => {
+            const ok = r.test(password);
+            return `<li class="phase1-criterion ${ok ? 'ok' : ''}" data-id="${r.id}">${r.label}</li>`;
+        }).join('');
+
+        // Barra de força
+        const passed = requirements.filter(r => r.test(password)).length;
+        const percent = Math.round((passed / 5) * 100);
+        const strength = getStrength(password);
+        const fill = $('#strength-fill');
+        fill.style.width = percent + '%';
+        fill.style.background =
+            strength === 'weak'   ? '#FF6B6B' :
+            strength === 'medium' ? '#FFC98A' : '#F29DBF';
+        $('#strength-text').textContent =
+            password.length === 0 ? 'Digite uma senha...' :
+            strength === 'weak'   ? '❌ Fraca' :
+            strength === 'medium' ? '⚠️ Média' : '✅ Forte';
+        $('#strength-text').style.color =
+            strength === 'weak'   ? '#FF6B6B' :
+            strength === 'medium' ? '#FFC98A' : '#F29DBF';
+        $('#strength-percent').textContent = percent + '%';
+
+        // Tempo pra quebrar
+        let time = '—';
+        if (password.length >= 16) time = 'séculos 🌌';
+        else if (password.length >= 12) time = 'séculos';
+        else if (password.length >= 10) time = 'anos';
+        else if (password.length >= 8) time = 'dias';
+        else if (password.length >= 6) time = 'horas';
+        else if (password.length >= 1) time = 'segundos';
+        $('#crack-time').textContent = time;
+
+        // Botão submit
+        const allPassed = requirements.every(r => r.test(password));
+        $('#phase1-submit').disabled = !allPassed;
+        $('#phase1-submit').textContent = allPassed
+            ? '✅ Senha forte! Enviar →'
+            : 'Crie uma senha forte para continuar';
+    }
+
+    function animateKey(key) {
+        const sel = `.phase1-key[data-key="${key === ' ' ? ' ' : key}"]`;
+        const el = keyboardArea.querySelector(sel);
+        if (el) {
+            el.classList.add('pressed');
+            setTimeout(() => el.classList.remove('pressed'), 120);
+        }
+    }
+
+    function handleInput(key) {
+        if (key === 'Shift') {
+            shiftActive = !shiftActive;
+            updateShift();
+            return;
+        }
+        if (key === 'Backspace') {
+            password = password.slice(0, -1);
+        } else if (key === 'Enter') {
+            if (requirements.every(r => r.test(password))) submit();
+            return;
+        } else if (key.length === 1) {
+            if (password.length < 32) {
+                let c = key;
+                if (shiftActive && /[a-z]/.test(c)) c = c.toUpperCase();
+                password += c;
+                shiftActive = false;
+                updateShift();
+            }
+        }
+        animateKey(key === ' ' ? ' ' : key);
+        updateUI();
+    }
+
+    async function submit() {
+        const btn = $('#phase1-submit');
+        btn.disabled = true;
+        btn.textContent = '⏳ Validando...';
+        try {
+            const fd = new FormData();
+            fd.append('password', password);
+            const r = await fetch(SUBMIT_URL, { method: 'POST', body: fd });
+            const d = await r.json();
+            if (d.success) {
+                $('#phase1-result-title').textContent =
+                    d.is_strong ? `🎉 Senha aprovada! (${d.score}/${d.max_score})` :
+                    `⚠️ Senha fraca (${d.score}/${d.max_score})`;
+                $('#phase1-result-text').textContent =
+                    `${d.label} — Tempo pra quebrar: ${d.time}`;
+                $('#phase1-next-btn').href = d.next_url;
+                $('#phase1-result').classList.remove('hidden');
+                btn.textContent = '✅ Validado!';
+            } else {
+                alert(d.error || 'Erro.');
+                btn.disabled = false;
+                btn.textContent = 'Crie uma senha forte para continuar';
+            }
+        } catch (e) {
+            console.error(e);
+            btn.disabled = false;
+            btn.textContent = 'Crie uma senha forte para continuar';
+        }
+    }
+
+    function reset() {
+        password = '';
+        shiftActive = false;
+        $('#phase1-result').classList.add('hidden');
+        renderKeyboard();
+        updateShift();
+        updateUI();
+    }
+
+    function attachEvents() {
+        // Click no teclado virtual
+        keyboardArea.addEventListener('click', (e) => {
+            const btn = e.target.closest('.phase1-key');
+            if (!btn) return;
+            handleInput(btn.dataset.key);
+        });
+
+        // Toggle visibilidade
+        $('#toggle-visibility').addEventListener('click', () => {
+            shown = !shown;
+            updateUI();
+        });
+
+        // Apagar tudo
+        $('#phase1-clear').addEventListener('click', reset);
+
+        // Submit
+        $('#phase1-submit').addEventListener('click', submit);
+
+        // ═══════ TECLADO FÍSICO DO PC ═══════
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            if (['Shift','Control','Alt','Meta'].includes(e.key)) return;
+
+            const k = e.key;
+            if (k === 'Backspace') { handleInput('Backspace'); animateKey('Backspace'); return; }
+            if (k === 'Enter') { handleInput('Enter'); return; }
+            if (k === ' ' || k === 'Spacebar') { handleInput(' '); animateKey(' '); return; }
+            if (k === 'Tab' || k === 'Escape') return;
+            if (k.length === 1) { handleInput(k); animateKey(k); }
+        });
+
+        // Shift fisico: desliga ao soltar
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'Shift') {
+                shiftActive = false;
+                updateShift();
+            }
+        });
+    }
+
+    // Init
+    if (keyboardArea) {
+        renderKeyboard();
+        updateShift();
+        updateUI();
+        attachEvents();
+    }
+
+    // Construtor de senha com dados (etapa 1 -> 2 -> fecha subfase)
+    if (builder && SAVE_DATA_URL && SUB3_SUBMIT_URL) {
+        const step1 = document.getElementById('phase1-builder-step1');
+        const step2 = document.getElementById('phase1-builder-step2');
+        const form = document.getElementById('phase1-builder-form');
+        const weakList = document.getElementById('phase1-weak-passwords');
+        const backBtn = document.getElementById('phase1-builder-back');
+        const continueBtn = document.getElementById('phase1-builder-continue');
+
+        const show = (target) => {
+            [step1, step2].forEach(s => {
+                if (s) s.classList.add('phase1-hidden');
+            });
+            if (target) target.classList.remove('phase1-hidden');
+            builder.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        // Etapa 1 -> 2: envia os dados pro backend, recebe senhas fracas
+        if (form) {
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const fd = new FormData(form);
+                const payload = {
+                    pet:    fd.get('pet')    || '',
+                    dob:    fd.get('dob')    || '',
+                    team:   fd.get('team')   || '',
+                    city:   fd.get('city')   || '',
+                    mother: fd.get('mother') || ''
+                };
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Analisando...';
+                }
+                fetch(SAVE_DATA_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.weak_passwords && weakList) {
+                        weakList.innerHTML = data.weak_passwords.map(([pwd, why]) => {
+                            // Escapa HTML pra evitar injection no innerHTML
+                            const safePwd = String(pwd).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+                            const safeWhy = String(why).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+                            return `<li class="phase1-weak-item">
+                                <span class="phase1-weak-pwd">${safePwd}</span>
+                                <span class="phase1-weak-why">${safeWhy}</span>
+                            </li>`;
+                        }).join('');
+                    }
+                    show(step2);
+                })
+                .catch(err => {
+                    console.error('Erro ao salvar dados:', err);
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Ver como um hacker usaria isso →';
+                    }
+                });
+            });
+        }
+
+        // Etapa 2 -> 1: voltar pro form
+        if (backBtn) {
+            backBtn.addEventListener('click', () => show(step1));
+        }
+
+        // Etapa 2 -> fecha subfase 3 e avanca pra Fase 2
+        if (continueBtn) {
+            continueBtn.addEventListener('click', () => {
+                continueBtn.disabled = true;
+                continueBtn.textContent = 'Carregando...';
+                fetch(SUB3_SUBMIT_URL, { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.next_url) {
+                            window.location.href = data.next_url;
+                        } else {
+                            continueBtn.disabled = false;
+                            continueBtn.textContent = 'Continuar →';
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Erro ao avancar:', err);
+                        continueBtn.disabled = false;
+                        continueBtn.textContent = 'Continuar →';
+                    });
+            });
+        }
+    }
+    // Scroll automatico ate o teclado quando clicar "Comecar"
+    if (keyboardArea) {
+        const startBtn = document.getElementById('phase1-start-btn');
+        if (startBtn) {
+            startBtn.addEventListener('click', () => {
+                setTimeout(() => {
+                    const kb = document.getElementById('phase1-keyboard');
+                    if (kb) kb.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            });
+        }
+    }
+})();
+// ═══════════════════════════════════════════════════════════════════════════
+// ═══════ FASE 2 — CLASSIFICAR SENHAS (drag and drop) ═══════
+// ═══════════════════════════════════════════════════════════════════════════
+
+(function initPhase2() {
+    const root = document.getElementById('phase2-game');
+    if (!root) return;
+
+    const SUBMIT_URL = window.PHASE2_SUBMIT_URL;
+
+    // Pool: 4 faceis + 4 dificeis (8 cards no total)
+    const CARDS = [
+        // 🔓 FACEIS (4)
+        { text: "123456",          answer: "easy", why: "Sequência numérica óbvia, seria o primeiro chute de qualquer hacker" },
+        { text: "amor123",         answer: "easy", why: "Palavra comum + número, padrão clássico de dicionário" },
+        { text: "Maria1990",       answer: "easy", why: "Nome próprio + ano, fácil de descobrir via redes sociais" },
+        { text: "qwerty",          answer: "easy", why: "Pãdrao de teclado, entre as senhas mais usadas do mundo" },
+
+        // 🔒 DIFICEIS (4)
+        { text: "Tr0mb@d4!X9",     answer: "hard", why: "Mistura letras, numeros e simbolos aleatorios" },
+        { text: "Cafe-7#Lua-92!",  answer: "hard", why: "Frase longa com hifens, numeros e simbolo" },
+        { text: "v7!qR3@kP9#",     answer: "hard", why: "Gerada aleatoriamente, sem significado pessoal" },
+        { text: "sol-lua-verde-branco-rosa-work-2026", answer: "hard", why: "Passphrase longa combinando palavras aleatorias" }
+    ];
+
+    let state = {
+        score: 0,
+        correct: 0,
+        wrong: 0,
+        total: CARDS.length,
+        placedCount: 0,
+        submitted: false
+    };
+
+    const $ = (s) => root.querySelector(s);
+    const $$ = (s) => root.querySelectorAll(s);
+    const pool = $('#phase2-pool');
+
+    // Embaralha (Fisher-Yates) e monta os cards
+    function shuffle(arr) {
+        const a = arr.slice();
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    }
+
+    function renderCards() {
+        pool.innerHTML = '';
+        shuffle(CARDS).forEach((card, i) => {
+            const el = document.createElement('div');
+            el.className = 'phase2-card';
+            el.draggable = true;
+            el.dataset.idx = String(i);
+            el.dataset.answer = card.answer;
+            // Store `why` directly on the element so the lookup later
+            // doesn't depend on the (shuffled) index into CARDS.
+            el.dataset.why = card.why;
+            el.innerHTML = `<span class="phase2-card-text">${card.text}</span>`;
+            pool.appendChild(el);
+            attachDrag(el);
+        });
+    }
+
+    function attachDrag(el) {
+        el.addEventListener('dragstart', (e) => {
+            if (el.classList.contains('placed')) { e.preventDefault(); return; }
+            el.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', el.dataset.idx);
+        });
+        el.addEventListener('dragend', () => el.classList.remove('dragging'));
+    }
+
+    // Dropzones
+    $$('.phase2-dropzone').forEach(zone => {
+        zone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            zone.classList.add('drag-over');
+        });
+        zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+        zone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            zone.classList.remove('drag-over');
+            const idx = e.dataTransfer.getData('text/plain');
+            const card = pool.querySelector(`.phase2-card[data-idx="${idx}"]`)
+                       || zone.querySelector(`.phase2-card[data-idx="${idx}"]`);
+            if (!card || card.classList.contains('placed')) return;
+            handleDrop(card, zone);
+        });
+    });
+
+    // Tambem deixa devolver pro pool (arrastar de volta = reset)
+    pool.addEventListener('dragover', (e) => { e.preventDefault(); });
+
+    function handleDrop(card, zone) {
+        const guessed = zone.dataset.zone;          // 'easy' ou 'hard'
+        const expected = card.dataset.answer;
+        const isCorrect = guessed === expected;
+
+        // Trava o card
+        card.classList.remove('dragging');
+        card.classList.add('placed');
+        card.draggable = false;
+        card.classList.add(isCorrect ? 'is-correct' : 'is-wrong');
+
+        // Tooltip explicando
+        // Use the `why` stored on the element directly (the CARDS array is
+        // shuffled, so indexing by dataset.idx would return the wrong object).
+        const why = card.dataset.why || '';
+        // Adiciona uma ribbon com a explicacao (tooltip simples)
+        const tip = document.createElement('span');
+        tip.className = 'phase2-card-tip';
+        tip.textContent = (isCorrect ? '✅ ' : '❌ ') + why;
+        card.appendChild(tip);
+
+        // Move o card pra coluna
+        zone.appendChild(card);
+
+        // Pontua
+        if (isCorrect) {
+            state.score += 10;
+            state.correct++;
+        } else {
+            state.wrong++;
+        }
+        state.placedCount++;
+        updateStats();
+
+        // Quando todos os cards foram posicionados, finaliza
+        if (state.placedCount >= state.total && !state.submitted) {
+            state.submitted = true;
+            setTimeout(finalize, 700);
+        }
+    }
+
+    function updateStats() {
+        $('#phase2-score').textContent = state.score;
+        $('#phase2-correct').textContent = `${state.correct}/${state.total}`;
+    }
+
+    function finalize() {
+        $('#phase2-final').classList.remove('hidden');
+        $('#phase2-final-score').textContent =
+            `Você acertou ${state.correct} de ${state.total} senhas — ${state.score} pontos`;
+
+        // Envia pro backend (mesmo contrato da fase2_submit)
+        if (SUBMIT_URL) {
+            fetch(SUBMIT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ score: state.score, correct: state.correct, wrong: state.wrong })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.next_url) {
+                    $('#phase2-next').href = data.next_url;
+                }
+            })
+            .catch(e => console.error(e));
+        } else {
+            $('#phase2-next').href = '/game/{{ game.id }}/phase/2/sub/1';
+        }
+    }
+
+    // Boot
+    renderCards();
+    updateStats();
+})();
 </script>
 {% endblock %}

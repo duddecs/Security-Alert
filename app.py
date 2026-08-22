@@ -5,6 +5,7 @@ Grupo: Ana Luiza, Maria Eduarda (Duda), Pedro Henrique, Thalia
 """
 
 import os
+import re
 import sqlite3
 import secrets
 from datetime import datetime, timedelta
@@ -105,62 +106,26 @@ GAME_PHASES = {
         "subphases": [
             {
                 "id": 1,
-                "title": "Qual é a senha mais forte?",
-                "question": "Entre as opções abaixo, qual é a senha MAIS SEGURA?",
-                "options": [
-                    "123456merlin",
-                    "leroy2026",
-                    "^t4$K&$FW5L2",
-                    "passwd123"
-                ],
-                "correct": 2,
-                "explanation_correct": (
-                    "Excelente! Senhas fortes misturam letras maiúsculas, minúsculas, "
-                    "números e caractéres especiais. Quanto mais longa e aleatoria, melhor!"
-                ),
-                "explanation_wrong": (
-                    "Ops! Senhas como '123456merlin', 'leroy2026' e 'passwd123' são extremamente fáceis de adivinhar. "
-                    "Use sempre combinações complexas com maiúsculas, minúsculas, números e simbolos!"
+                "title": "Construtor de senha com dados",
+                "mode": "password_builder",
+                "question": (
+                    "Digite dados fictícios e veja que senhas fracas um "
+                    "atacante poderia montar com eles."
                 )
             },
             {
                 "id": 2,
-                "title": "Compartilhar senhas?",
-                "question": "Um colega pede sua senha emprestada para acessar um sistema rapidamente. O que voce faz?",
-                "options": [
-                    "Compartilho, é so uma vez mesmo!",
-                    "Não compartilho e aviso que ele deve pedir acesso ao TI",
-                    "Mando por WhatsApp, é mais rapido",
-                    "Anoto em um post-it e entrego pra ele"
-                ],
-                "correct": 1,
-                "explanation_correct": (
-                    "Perfeito! Nunca compartilhe suas senhas com ninguem. "
-                    "Cada colaborador deve ter suas próprias credenciais. O TI pode criar acessos quando necessário."
-                ),
-                "explanation_wrong": (
-                    "Cuidado! Compartilhar senhas é um risco enorme. Se o colega precisar de acesso, "
-                    "ele deve solicitar formalmente ao departamento de TI. Sua senha é só sua!"
-                )
+                "title": "Criar senha forte",
+                "question": "Crie uma senha forte usando o teclado virtual abaixo.",
+                "options": []
             },
             {
                 "id": 3,
-                "title": "Reutilização de senhas",
-                "question": "Voce usa a mesma senha no sistema da Leroy Merlin e no seu Instagram pessoal. Isso e...",
-                "options": [
-                    "Prático e inteligente",
-                    "Perigoso! Se uma conta vazar, todas estão comprometidas",
-                    "Não tem problema, ninguem vai descobrir",
-                    "Recomendado pela empresa"
-                ],
-                "correct": 1,
-                "explanation_correct": (
-                    "Isso mesmo! Nunca reuse senhas entre sistemas pessoais e corporativos. "
-                    "Se seu Instagram for hackeado, o atacante terá acesso ao sistema da empresa tambem!"
-                ),
-                "explanation_wrong": (
-                    "Cuidado! Reutilizar senhas é um erro classico. Se um site que voce usa sofrer "
-                    "um vazamento, suas credenciais da empresa ficam expostas. Use senhas únicas!"
+                "title": "Classificar senhas",
+                "mode": "password_dnd",
+                "question": (
+                    "Arraste cada cartão para a coluna correta: Senha Fácil (fraca, "
+                    "fácil de adivinhar) ou Senha Difícil (forte, bem protegida)."
                 )
             }
         ]
@@ -630,6 +595,9 @@ def game_play(game_id, phase, sub):
     if phase not in GAME_PHASES:
         return redirect(url_for('game_feedback', game_id=game_id))
 
+    # A Fase 1 tem layout customizado (teclado virtual in-page),
+    # mas é renderizado dentro do proprio game.html quando phase == 1.
+
     phase_data = GAME_PHASES[phase]
     if sub > len(phase_data['subphases']):
         # Proxima fase
@@ -669,6 +637,352 @@ def game_play(game_id, phase, sub):
                          user_email=user_email,
                          total_phases=len(GAME_PHASES),
                          total_subs_in_phase=len(phase_data['subphases']))
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 🎮 FASE 1 — CRIADOR DE SENHA (point-and-click)
+# Rotas dedicadas: /game/<id>/phase/1/play e /game/<id>/phase/1/submit
+# ═══════════════════════════════════════════════════════════════════════════
+
+COMMON_PATTERNS = [
+    r'123', r'234', r'345', r'456', r'567', r'678', r'789', r'890',
+    r'abc', r'bcd', r'cde', r'def', r'qwerty', r'asdf', r'zxcv',
+    r'111', r'222', r'333', r'444', r'555', r'666', r'777', r'888', r'999', r'000',
+    r'password', r'senha', r'admin', r'login', r'user',
+]
+
+def check_password_strength(password):
+    """Avalia a força de uma senha."""
+    if not password:
+        return {"score": 0, "max_score": 18, "strength": "vazia", "label": "Digite uma senha...", "color": "#888", "percent": 0, "time": "—", "feedback": [], "bonuses": [], "length": 0}
+
+    score = 0
+    feedback = []
+    bonuses = []
+    length = len(password)
+
+    if length >= 8:
+        score += 2; feedback.append("✅ Pelo menos 8 caracteres")
+    elif length >= 6:
+        score += 1; feedback.append("⚠️ Senha curta — tente pelo menos 8 caracteres")
+    else:
+        feedback.append("❌ Senha muito curta (mínimo 6 caracteres)")
+
+    if length >= 12: score += 3; bonuses.append("🌟 12+ caracteres (+3)")
+    if length >= 16: score += 2; bonuses.append("🏆 16+ caracteres (+2)")
+
+    if re.search(r'[a-z]', password): score += 2; feedback.append("✅ Tem letras minúsculas")
+    else: feedback.append("❌ Falta letra minúscula")
+    if re.search(r'[A-Z]', password): score += 2; feedback.append("✅ Tem letras maiúsculas")
+    else: feedback.append("❌ Falta letra maiúscula")
+    if re.search(r'[0-9]', password): score += 2; feedback.append("✅ Tem números")
+    else: feedback.append("❌ Falta número")
+    if re.search(r'[^a-zA-Z0-9]', password): score += 3; feedback.append("✅ Tem caracteres especiais")
+    else: feedback.append("❌ Falta caractere especial (!@#$%)")
+
+    pwd_lower = password.lower()
+    has_pattern = any(re.search(pat, pwd_lower) for pat in COMMON_PATTERNS)
+    if has_pattern:
+        feedback.append("⚠️ Contém padrão comum (123, abc, qwerty...)")
+    else:
+        score += 2; feedback.append("✅ Sem padrões óbvios")
+
+    if re.search(r'(.)\1\1', password):
+        score -= 2; feedback.append("⚠️ Caracteres repetidos em sequência (aaa, 111)")
+    else:
+        score += 1; feedback.append("✅ Sem repetições em sequência")
+
+    score = max(0, score)
+    percent = int((score / 18) * 100)
+
+    if score <= 6: strength, label, color = "fraca", "❌ Fraca", "#FF6B6B"
+    elif score <= 10: strength, label, color = "media", "⚠️ Média", "#FFC98A"
+    elif score <= 14: strength, label, color = "forte", "✅ Forte", "#A8D5BA"
+    else: strength, label, color = "epica", "⭐ Épica", "#F29DBF"
+
+    if length < 6: time_str = "instantâneo"
+    elif length < 8 and not has_pattern: time_str = "algumas horas"
+    elif length < 10: time_str = "dias"
+    elif length < 12: time_str = "anos"
+    elif length < 16: time_str = "séculos"
+    else: time_str = "mais que a idade do universo 🌌"
+
+    return {"score": score, "max_score": 18, "strength": strength, "label": label, "color": color, "percent": percent, "time": time_str, "feedback": feedback, "bonuses": bonuses, "length": length}
+
+
+@app.route('/game/<int:game_id>/phase/1/sub/0/submit', methods=['POST'])
+@login_required
+def phase1_sub0_submit(game_id):
+    """Mini drag-and-drop de aquecimento (sub 0 da Fase 1). 4 cards:
+    2 faceis + 2 dificeis. Avanca para a sub 1 (teclado virtual)."""
+    db = get_db()
+    game = db.execute(
+        "SELECT * FROM game_sessions WHERE id = ? AND user_id = ? AND completed = 0",
+        (game_id, session['user_id'])
+    ).fetchone()
+    if not game:
+        return jsonify({"error": "Sessao invalida"}), 400
+
+    try:
+        data = request.get_json(force=True, silent=False) or {}
+    except Exception:
+        data = {}
+
+    score = int(data.get('score', 0))
+    correct = int(data.get('correct', 0))
+    wrong = int(data.get('wrong', 0))
+
+    existing = db.execute(
+        "SELECT * FROM phase_answers WHERE session_id = ? AND phase = 1 AND subphase = 0",
+        (game_id,)
+    ).fetchone()
+    if existing:
+        return jsonify({"error": "Voce ja completou essa fase"}), 400
+
+    # Pontuacao: 4 cards, escala igual a sub 2 (>=100: 10pts, >=60: 7pts, ...)
+    # Como o score maximo possivel aqui e 4 acertos * 10 = 40, mantemos a
+    # mesma logica mas com piso mais alto para reconhecer o aquecimento.
+    if correct >= 4: points = 7        # gabaritou
+    elif correct >= 3: points = 5
+    elif correct >= 2: points = 3
+    else: points = 1
+
+    is_strong = correct >= 3
+
+    db.execute(
+        "INSERT INTO phase_answers (session_id, phase, subphase, correct) VALUES (?, 1, 0, ?)",
+        (game_id, is_strong)
+    )
+    if points > 0:
+        db.execute(
+            "UPDATE game_sessions SET score = score + ? WHERE id = ?",
+            (points, game_id)
+        )
+    db.commit()
+
+    next_url = url_for('game_play', game_id=game_id, phase=1, sub=1)
+
+    return jsonify({
+        "success": True,
+        "score": score,
+        "points_earned": points,
+        "is_strong": is_strong,
+        "correct": correct,
+        "wrong": wrong,
+        "next_url": next_url
+    })
+
+
+@app.route('/game/<int:game_id>/phase/1/submit', methods=['POST'])
+@login_required
+def phase1_submit(game_id):
+    """Teclado virtual (sub 2). Avança para a sub 3 (drag and drop)."""
+    db = get_db()
+    game = db.execute(
+        "SELECT * FROM game_sessions WHERE id = ? AND user_id = ? AND completed = 0",
+        (game_id, session['user_id'])
+    ).fetchone()
+    if not game:
+        return jsonify({"error": "Sessao invalida"}), 400
+
+    password = request.form.get('password', '')
+    result = check_password_strength(password)
+
+    existing = db.execute(
+        "SELECT * FROM phase_answers WHERE session_id = ? AND phase = 1 AND subphase = 2",
+        (game_id,)
+    ).fetchone()
+    if existing:
+        return jsonify({"error": "Voce ja completou essa fase"}), 400
+
+    is_strong = all([
+        len(password) >= 10,
+        re.search(r'[a-z]', password),
+        re.search(r'[A-Z]', password),
+        re.search(r'[0-9]', password),
+        re.search(r'[^a-zA-Z0-9]', password),
+    ])
+    points = 10 if is_strong else 0
+
+    db.execute(
+        "INSERT INTO phase_answers (session_id, phase, subphase, correct) VALUES (?, 1, 2, ?)",
+        (game_id, is_strong)
+    )
+    if points > 0:
+        db.execute(
+            "UPDATE game_sessions SET score = score + ? WHERE id = ?",
+            (points, game_id)
+        )
+    db.commit()
+
+    next_url = url_for('game_play', game_id=game_id, phase=1, sub=3)
+
+    return jsonify({
+        "success": True,
+        "score": result['score'], "max_score": result['max_score'],
+        "is_strong": is_strong, "points_earned": points,
+        "strength": result['strength'], "label": result['label'],
+        "color": result['color'], "percent": result['percent'],
+        "time": result['time'], "feedback": result['feedback'],
+        "bonuses": result['bonuses'], "next_url": next_url
+    })
+
+
+@app.route('/game/<int:game_id>/phase/1/sub/2/submit', methods=['POST'])
+@login_required
+def phase1_sub2_submit(game_id):
+    """Valida o resultado do jogo de classificar senhas (drag and drop).
+    Mora dentro da Fase 1 (subfase 3) e empurra o jogador para a Fase 2.
+    """
+    db = get_db()
+    game = db.execute(
+        "SELECT * FROM game_sessions WHERE id = ? AND user_id = ? AND completed = 0",
+        (game_id, session['user_id'])
+    ).fetchone()
+    if not game:
+        return jsonify({"error": "Sessao invalida"}), 400
+
+    # Pega dados do JSON (frontend envia JSON)
+    try:
+        data = request.get_json(force=True, silent=False) or {}
+    except Exception:
+        data = {}
+
+    score = int(data.get('score', 0))
+    correct = int(data.get('correct', 0))
+    wrong = int(data.get('wrong', 0))
+
+    # Verifica se ja respondeu essa fase
+    existing = db.execute(
+        "SELECT * FROM phase_answers WHERE session_id = ? AND phase = 1 AND subphase = 3",
+        (game_id,)
+    ).fetchone()
+    if existing:
+        return jsonify({"error": "Voce ja completou essa fase"}), 400
+
+    # Pontos baseados em performance
+    # 0 vidas = 0pts, 1 vida = 3pts, 2 vidas = 7pts, 3 vidas = 10pts
+    # Bonus: cada acerto extra alem de 5 = +1pt
+    if score >= 100: points = 10
+    elif score >= 60: points = 7
+    elif score >= 30: points = 5
+    else: points = 2
+
+    is_strong = points >= 7
+
+    db.execute(
+        "INSERT INTO phase_answers (session_id, phase, subphase, correct) VALUES (?, 1, 3, ?)",
+        (game_id, is_strong)
+    )
+    db.execute(
+        "UPDATE game_sessions SET score = score + ? WHERE id = ?",
+        (points, game_id)
+    )
+    db.commit()
+
+    next_url = url_for('game_play', game_id=game_id, phase=2, sub=1)
+
+    return jsonify({
+        "success": True,
+        "score": score,
+        "points_earned": points,
+        "is_strong": is_strong,
+        "correct": correct,
+        "wrong": wrong,
+        "next_url": next_url
+    })
+
+
+@app.route('/game/<int:game_id>/phase/1/sub/3/save-data', methods=['POST'])
+@login_required
+def phase1_sub3_save_data(game_id):
+    """Salva os 5 dados ficticios do Construtor de Senha com Dados na sessao.
+    O frontend usa isso pra construir o passo 2 (mostra senhas fracas).
+    Os dados nao sao persistidos no banco — sao temporarios e vivem
+    apenas na sessao do Flask."""
+    db = get_db()
+    game = db.execute(
+        "SELECT * FROM game_sessions WHERE id = ? AND user_id = ? AND completed = 0",
+        (game_id, session['user_id'])
+    ).fetchone()
+    if not game:
+        return jsonify({"error": "Sessao invalida"}), 400
+
+    try:
+        data = request.get_json(force=True, silent=False) or {}
+    except Exception:
+        data = {}
+
+    # Salva os 5 campos na sessao (so pra esse usuario + esse game)
+    session[f'p1s3_personal_{game_id}'] = {
+        'pet':    (data.get('pet')    or '').strip()[:40],
+        'dob':    (data.get('dob')    or '').strip()[:10],
+        'team':   (data.get('team')   or '').strip()[:40],
+        'city':   (data.get('city')   or '').strip()[:40],
+        'mother': (data.get('mother') or '').strip()[:40],
+    }
+
+    # Pre-calcula as 5 senhas fracas com base nos dados, pra o frontend
+    # renderizar no passo 2. Se algum campo estiver vazio, usa placeholder.
+    d = session[f'p1s3_personal_{game_id}']
+    pet = d['pet'] or 'pet'
+    dob = d['dob'] or '15051998'
+    team = d['team'] or 'time'
+    city = d['city'] or 'cidade'
+    mother = d['mother'] or 'mae'
+
+    # Extrai o ano da data (4 ultimos digitos, ou usa tudo se nao for data)
+    year = dob[-4:] if len(dob) >= 4 and dob[-4:].isdigit() else '1990'
+    # Pega a primeira letra do pet
+    pet_initial = pet[0].lower() if pet else 'p'
+    team_initial = team[0].lower() if team else 't'
+
+    weak_passwords = [
+        (f'{pet_initial}123',       f'pet + sequencia numerica (seu pet e {pet})'),
+        (f'{team_initial}2024',     f'time + ano (seu time e {team})'),
+        (mother.lower(),            f'nome da mae (sua mae e {mother})'),
+        (f'{city}{year}',           f'cidade + ano de nascimento (voce nasceu em {city} em {year})'),
+        (f'{pet}{year}',            f'pet + ano (combinacao classica)'),
+    ]
+
+    return jsonify({
+        "success": True,
+        "weak_passwords": weak_passwords
+    })
+
+
+@app.route('/game/<int:game_id>/phase/1/sub/3/submit', methods=['POST'])
+@login_required
+def phase1_sub3_submit(game_id):
+    """Fecha a subfase 1 (Construtor de Senha) e avanca para o teclado virtual.
+    Nao soma pontos: a subfase 1 e educativa, nao pontuavel."""
+    db = get_db()
+    game = db.execute(
+        "SELECT * FROM game_sessions WHERE id = ? AND user_id = ? AND completed = 0",
+        (game_id, session['user_id'])
+    ).fetchone()
+    if not game:
+        return jsonify({"error": "Sessao invalida"}), 400
+
+    existing = db.execute(
+        "SELECT * FROM phase_answers WHERE session_id = ? AND phase = 1 AND subphase = 1",
+        (game_id,)
+    ).fetchone()
+    if existing:
+        return jsonify({"error": "Voce ja completou essa fase"}), 400
+
+    db.execute(
+        "INSERT INTO phase_answers (session_id, phase, subphase, correct) VALUES (?, 1, 1, ?)",
+        (game_id, True)
+    )
+    db.commit()
+
+    next_url = url_for('game_play', game_id=game_id, phase=1, sub=2)
+
+    return jsonify({
+        "success": True,
+        "next_url": next_url
+    })
+
 
 @app.route('/game/<int:game_id>/answer', methods=['POST'])
 @login_required
