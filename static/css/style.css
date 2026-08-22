@@ -507,6 +507,31 @@ a { color: var(--blue); text-decoration: none; }
 .option-wrong { border-color:var(--red) !important; background:rgba(231,76,60,.1) !important; }
 .option-wrong .option-letter { background:var(--red); color:#fff; }
 
+/* Classification phase (classificar documentos) */
+.classify-phase { max-width:950px; }
+.classify-layout { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start; }
+.file-card { background:var(--bg-deep); border:2px solid var(--border); border-radius:var(--radius); padding:1.5rem; position:relative; overflow:hidden; }
+.file-card::before { content:''; position:absolute; top:0; left:0; width:100%; height:2px; background:linear-gradient(90deg, var(--primary), var(--cyber-glitch-b), transparent); opacity:.7; }
+.file-header { display:flex; align-items:center; gap:.8rem; margin-bottom:1rem; }
+.file-icon { font-size:1.8rem; }
+.file-name { font-family:Consolas, 'Courier New', monospace; font-size:.95rem; color:var(--primary); font-weight:600; word-break:break-all; }
+.file-content { color:var(--text); font-size:.9rem; line-height:1.7; white-space:pre-line; }
+.classify-options { display:flex; flex-direction:column; gap:1rem; }
+.classify-btn { display:flex; flex-direction:column; align-items:flex-start; gap:.25rem; padding:1rem 1.2rem; border:2px solid var(--border); border-radius:var(--radius); background:var(--bg); color:var(--text); cursor:pointer; text-align:left; transition:.2s; }
+.classify-btn:hover { transform:translateY(-2px); }
+.classify-label { font-weight:700; font-size:1.05rem; }
+.classify-desc { color:var(--text-muted); font-size:.82rem; }
+.classify-btn.public { border-color:var(--green); }
+.classify-btn.public:hover { background:rgba(39,174,96,.1); }
+.classify-btn.internal { border-color:var(--orange); }
+.classify-btn.internal:hover { background:rgba(243,156,18,.1); }
+.classify-btn.confidential { border-color:var(--red); }
+.classify-btn.confidential:hover { background:rgba(231,76,60,.1); }
+
+@media(max-width:768px) {
+    .classify-layout { grid-template-columns:1fr; }
+}
+
 /* Answer feedback */
 .answer-result { margin-top:1.5rem; padding:1.5rem; border-radius:var(--radius); border-left:5px solid; }
 .answer-result.correct { background:rgba(39,174,96,.08); border-color:var(--green); }
